@@ -11,16 +11,15 @@ export function DtiPage() {
   if (!application) return null;
 
   return (
-    <div>
-      <StageIntro
-        title="Borrower debt and DTI"
-        lede="Trade lines come off the credit report. The new loan payment comes from the payoff total and proposed terms."
-      />
+    <StageIntro
+      title="Credit Report Liabilities"
+      lede="Trade lines still on the credit report after selected student-loan payoffs. These payments stay in DTI."
+    >
       <DebtForm
         application={application}
         readOnly={readOnly}
         onChange={(patch) => updateApplication(id, patch)}
       />
-    </div>
+    </StageIntro>
   );
 }

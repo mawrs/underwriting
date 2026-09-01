@@ -18,7 +18,7 @@ import type {
   Role,
 } from "./types";
 
-const STORAGE_KEY = "uw-prototype-v1";
+const STORAGE_KEY = "uw-prototype-v2";
 const SERVER_SNAPSHOT = seedApplications;
 
 type Listener = () => void;
@@ -51,7 +51,12 @@ function loadApplications(): Application[] {
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return clone(seedApplications);
     }
-    return parsed;
+    return parsed.map((item) => ({
+      ...item,
+      workbookFileName: item.workbookFileName ?? null,
+      workbookUploadedAt: item.workbookUploadedAt ?? null,
+      workbookCopy: item.workbookCopy ?? null,
+    }));
   } catch {
     return clone(seedApplications);
   }
@@ -113,6 +118,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         liabilities: patch.liabilities ?? item.liabilities,
         debtTrades: patch.debtTrades ?? item.debtTrades,
         notes: patch.notes ?? item.notes,
+        workbookFileName: patch.workbookFileName ?? item.workbookFileName,
+        workbookUploadedAt: patch.workbookUploadedAt ?? item.workbookUploadedAt,
+        workbookCopy: patch.workbookCopy ?? item.workbookCopy,
         lastSavedAt: new Date().toISOString(),
       };
     });

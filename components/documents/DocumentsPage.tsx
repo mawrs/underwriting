@@ -13,17 +13,65 @@ export function DocumentsPage() {
   if (!application) return null;
 
   return (
-    <div className="space-y-md">
-      <StageIntro
-        title="Documents"
-        lede="Cross-check every upload before anything downstream gets entered. What you mark here decides what the rest of the flow lets you confirm."
-      />
+    <StageIntro
+      title="Documents"
+      lede="Cross-check uploads. Status changes stay on the file and do not send a customer letter."
+    >
+      <div className="mb-md flex flex-wrap gap-sm">
+        <button type="button" className="uw-btn-primary" disabled>
+          Upload Files
+        </button>
+        <button
+          type="button"
+          className="uw-btn-primary"
+          disabled={readOnly}
+          onClick={() =>
+            updateApplication(id, {
+              documents: application.documents.map((doc) =>
+                doc.reviewStatus === "pending" ? { ...doc, reviewStatus: "approved" as const } : doc,
+              ),
+            })
+          }
+        >
+          Approve pending
+        </button>
+        <button
+          type="button"
+          className="uw-btn-primary"
+          disabled={readOnly}
+          onClick={() =>
+            updateApplication(id, {
+              documents: application.documents.map((doc) =>
+                doc.reviewStatus === "pending" ? { ...doc, reviewStatus: "rejected" as const } : doc,
+              ),
+            })
+          }
+        >
+          Reject pending
+        </button>
+        <button
+          type="button"
+          className="uw-btn-primary"
+          disabled={readOnly}
+          onClick={() =>
+            updateApplication(id, {
+              documents: application.documents.map((doc) =>
+                doc.reviewStatus === "pending"
+                  ? { ...doc, reviewStatus: "incomplete" as const }
+                  : doc,
+              ),
+            })
+          }
+        >
+          Mark pending incomplete
+        </button>
+      </div>
       <DocumentsTable
         application={application}
         readOnly={readOnly}
         onChange={(documents) => updateApplication(id, { documents })}
       />
       <FlagList flags={stepFlags(application, "documents")} />
-    </div>
+    </StageIntro>
   );
 }

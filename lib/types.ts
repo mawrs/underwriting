@@ -95,9 +95,12 @@ export interface Liability {
   payoffType: PayoffType;
   adjCreditorName: string;
   adjAccountNumber: string;
+  adjLoanIdentifier: string;
   adjBalance: number;
   source: "credit-report" | "sallie-mae" | "manual";
   confirmed: boolean;
+  lenderAddresses: string[];
+  selectedAddress: string;
 }
 
 export interface IncomeWorksheet {
@@ -196,6 +199,9 @@ export interface Application {
   approvedAt: string | null;
   primarySnapshot: PrimarySnapshot | null;
   lastSavedAt: string | null;
+  workbookFileName: string | null;
+  workbookUploadedAt: string | null;
+  workbookCopy: Record<string, string> | null;
 }
 
 export type ApplicationPatch = Partial<
@@ -211,5 +217,10 @@ export type ApplicationPatch = Partial<
     | "seniorDecision"
     | "status"
     | "borrower"
+    | "workbookFileName"
+    | "workbookUploadedAt"
+    | "workbookCopy"
+    | "requestedTerm"
+    | "requestedRateType"
   >
 >;

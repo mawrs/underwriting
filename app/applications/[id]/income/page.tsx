@@ -1,5 +1,6 @@
-import { IncomePage } from "@/components/underwriting/IncomePage";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <IncomePage />;
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  redirect(`/applications/${id}/underwriting`);
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, type ReactNode } from "react";
+import { ListPagination } from "@/components/list/ListPagination";
 import { QueueViewSelect } from "@/components/queue/QueueViewSelect";
 import { dateOnly, money, shortDate } from "@/lib/format";
-import { useStore } from "@/lib/store";
 import type { QueueViewId } from "@/lib/queues";
+import { useStore } from "@/lib/store";
 import type { Application, WorkflowStatus } from "@/lib/types";
 
 type SortKey =
@@ -41,25 +42,28 @@ const SORT_VALUE: Record<SortKey, (app: Application) => string | number> = {
 };
 
 export function QueueTable({
+  title,
   statuses,
   hrefFor,
   empty,
   viewId,
 }: {
+  title: ReactNode;
   statuses: WorkflowStatus[];
   hrefFor: "primary" | "senior";
   empty: string;
   viewId: QueueViewId;
 }) {
   const { applications, ready } = useStore();
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("recordType");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   function href(app: Application) {
     return hrefFor === "senior"
-      ? `/senior-queue/${app.id}/documents`
-      : `/applications/${app.id}/documents`;
+      ? `/senior-queue/${app.id}/review`
+      : `/applications/${app.id}/review`;
   }
 
   const rows = useMemo(() => {
@@ -106,26 +110,20 @@ export function QueueTable({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-sm border border-gray-light bg-white shadow-[0px_1px_0.5px_0.05px_rgba(29,41,61,0.02)]">
-      <div className="flex shrink-0 flex-col gap-sm p-lg">
-        <div className="flex items-center gap-[10px]">
-          <label className="flex h-[38px] min-w-0 flex-1 items-center justify-between rounded-xs border border-gray-light bg-gray-extra-light px-md">
-            <span className="flex min-w-0 items-center gap-sm">
-              <SearchIcon />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search this list…"
-                className="min-w-0 flex-1 bg-transparent text-base text-charcoal outline-none placeholder:text-gray-medium"
-              />
-            </span>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex flex-col gap-sm px-xl py-md">
+        {title}
+        <div className="flex gap-sm">
+          <label className="uw-list-field min-w-0 flex-1">
+            <SearchIcon />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search"
+              className="h-7 min-w-0 flex-1 bg-transparent text-base text-gray-dark outline-none placeholder:text-gray-dark"
+            />
             {query ? (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => setQuery("")}
-                className="text-gray-medium"
-              >
+              <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="text-gray-medium">
                 <CloseIcon />
               </button>
             ) : null}
@@ -135,15 +133,15 @@ export function QueueTable({
       </div>
 
       {rows.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center border-t border-gray-light px-lg py-xl text-center text-sm text-gray-medium">
+        <p className="flex flex-1 items-center justify-center border border-gray-light px-xl py-xl text-center text-sm text-gray-medium">
           {empty}
         </p>
       ) : (
-        <div className="min-h-0 flex-1 overflow-auto">
-          <table className="w-full text-left text-xs">
+        <div className="min-h-0 flex-1 overflow-auto border border-gray-light">
+          <table className="w-full text-left">
             <thead className="sticky top-0 z-10">
-              <tr className="border-y border-gray-light bg-gray-lightest">
-                <th className="h-11 bg-gray-lightest px-sm text-xs font-normal text-gray-medium">#</th>
+              <tr>
+                <th className="uw-list-th">#</th>
                 <HeaderCell
                   label="Opportunity Record Type"
                   active={sortKey === "recordType"}
@@ -184,11 +182,7 @@ export function QueueTable({
                   active={sortKey === "cosigner"}
                   onClick={() => toggleSort("cosigner")}
                 />
-                <HeaderCell
-                  label="Stage"
-                  active={sortKey === "stage"}
-                  onClick={() => toggleSort("stage")}
-                />
+                <HeaderCell label="Stage" active={sortKey === "stage"} onClick={() => toggleSort("stage")} />
                 <HeaderCell
                   label="Opportunity Name"
                   active={sortKey === "opportunityName"}
@@ -210,55 +204,54 @@ export function QueueTable({
                   active={sortKey === "owner"}
                   onClick={() => toggleSort("owner")}
                 />
-                <th className="h-11 w-8 bg-gray-lightest px-xs" />
               </tr>
             </thead>
             <tbody>
-              {rows.map((app, index) => (
-                <tr key={app.id} className="border-b border-gray-light">
-                  <td className="whitespace-nowrap px-sm py-sm text-gray-medium">
-                    {index + 1}
-                  </td>
-                  <td className="whitespace-nowrap px-sm py-sm text-charcoal">{app.recordType}</td>
-                  <td className="whitespace-nowrap px-sm py-sm text-charcoal">
-                    {dateOnly(app.hardCreditDate)}
-                  </td>
-                  <td className="whitespace-nowrap px-sm py-sm text-charcoal">
-                    {dateOnly(app.applicationDate)}
-                  </td>
-                  <td className="whitespace-nowrap px-sm py-sm text-charcoal">{app.priority}</td>
-                  <td className="whitespace-nowrap px-sm py-sm text-charcoal">
-                    {shortDate(app.preReviewAt)}
-                  </td>
-                  <td className="whitespace-nowrap px-sm py-sm text-charcoal">{app.referrer || "—"}</td>
-                  <td className="whitespace-nowrap px-sm py-sm text-charcoal">{app.difficulty}</td>
-                  <td className="px-sm py-sm">
-                    <CosignerMark present={Boolean(app.cosigner)} />
-                  </td>
-                  <td className="whitespace-nowrap px-sm py-sm text-charcoal">{app.stage}</td>
-                  <td className="whitespace-nowrap px-sm py-sm">
-                    <Link href={href(app)} className="font-semibold text-primary hover:text-primary-hover">
-                      {app.opportunityName}
-                    </Link>
-                  </td>
-                  <td className="whitespace-nowrap px-sm py-sm text-right text-charcoal">
-                    {money(app.amount)}
-                  </td>
-                  <td className="whitespace-nowrap px-sm py-sm text-primary">{app.underwriter}</td>
-                  <td className="whitespace-nowrap px-sm py-sm text-primary">{app.owner}</td>
-                  <td className="px-xs py-sm">
-                    <Link
-                      href={href(app)}
-                      aria-label={`Open ${app.opportunityName}`}
-                      className="inline-flex size-7 items-center justify-center rounded-xs text-gray-medium hover:bg-gray-lightest hover:text-charcoal"
-                    >
-                      <ChevronDownIcon />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {rows.map((app, index) => {
+                const fileHref = href(app);
+                return (
+                  <tr
+                    key={app.id}
+                    tabIndex={0}
+                    role="link"
+                    aria-label={`Open ${app.opportunityName}`}
+                    className="cursor-pointer hover:bg-white"
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey) {
+                        window.open(fileHref, "_blank");
+                        return;
+                      }
+                      router.push(fileHref);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        router.push(fileHref);
+                      }
+                    }}
+                  >
+                    <td className="uw-list-td">{index + 1}</td>
+                    <td className="uw-list-td">{app.recordType}</td>
+                    <td className="uw-list-td">{dateOnly(app.hardCreditDate)}</td>
+                    <td className="uw-list-td">{dateOnly(app.applicationDate)}</td>
+                    <td className="uw-list-td">{app.priority}</td>
+                    <td className="uw-list-td">{shortDate(app.preReviewAt)}</td>
+                    <td className="uw-list-td">{app.referrer || "—"}</td>
+                    <td className="uw-list-td">{app.difficulty}</td>
+                    <td className="uw-list-td">
+                      <CosignerMark present={Boolean(app.cosigner)} />
+                    </td>
+                    <td className="uw-list-td">{app.stage}</td>
+                    <td className="uw-list-td text-primary underline">{app.opportunityName}</td>
+                    <td className="uw-list-td text-right">{money(app.amount)}</td>
+                    <td className="uw-list-td text-primary underline">{app.underwriter}</td>
+                    <td className="uw-list-td text-primary underline">{app.owner}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+          <ListPagination count={rows.length} />
         </div>
       )}
     </div>
@@ -277,11 +270,11 @@ function HeaderCell({
   align?: "left" | "right";
 }) {
   return (
-    <th className={`h-11 bg-gray-lightest px-sm ${align === "right" ? "text-right" : ""}`}>
+    <th className={`uw-list-th ${align === "right" ? "text-right" : ""}`}>
       <button
         type="button"
         onClick={onClick}
-        className={`inline-flex items-center gap-xs whitespace-nowrap text-xs font-normal text-gray-dark ${
+        className={`inline-flex items-center gap-xs text-sm font-semibold text-black ${
           align === "right" ? "flex-row-reverse" : ""
         }`}
       >
@@ -309,9 +302,9 @@ function CosignerMark({ present }: { present: boolean }) {
 
 function SearchIcon() {
   return (
-    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden>
-      <circle cx="4.5" cy="4.5" r="3.75" stroke="#888A8D" strokeWidth="1.2" />
-      <path d="M7.5 7.5L10 10" stroke="#888A8D" strokeWidth="1.2" strokeLinecap="round" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
+      <circle cx="11" cy="11" r="6.25" stroke="#535459" strokeWidth="1.4" />
+      <path d="M16 16l4 4" stroke="#535459" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }
@@ -327,16 +320,8 @@ function CloseIcon() {
 function SortIcon({ active }: { active: boolean }) {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-      <path d="M7 2.5L10 6H4L7 2.5z" fill={active ? "#535459" : "#C4C4C4"} />
-      <path d="M7 11.5L4 8h6L7 11.5z" fill={active ? "#535459" : "#C4C4C4"} />
-    </svg>
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 2.5L10 6H4L7 2.5z" fill={active ? "#000000" : "#C4C4C4"} />
+      <path d="M7 11.5L4 8h6L7 11.5z" fill={active ? "#000000" : "#C4C4C4"} />
     </svg>
   );
 }

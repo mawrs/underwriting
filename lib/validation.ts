@@ -63,6 +63,11 @@ export function submissionChecklist(application: Application): ChecklistItem[] {
       done: application.notes.degree.trim().length > 0,
     },
     {
+      id: "workbook",
+      label: "Completed underwriting workbook is attached to the file",
+      done: Boolean(application.workbookFileName),
+    },
+    {
       id: "decision",
       label: "Primary underwriter decision is selected",
       done: application.decision !== "",

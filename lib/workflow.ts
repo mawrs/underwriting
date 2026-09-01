@@ -1,15 +1,17 @@
 import { calculate } from "./calculations";
-import { money, percent } from "./format";
+import { percent } from "./format";
 import type { Application } from "./types";
 import { submissionChecklist } from "./validation";
 
 export const WORKFLOW_STEPS = [
-  { slug: "documents", label: "Documents", hint: "Cross-check uploads" },
-  { slug: "income", label: "Income", hint: "Stated against verified" },
-  { slug: "payoffs", label: "Loan payoffs", hint: "Payoffs and Sallie Mae" },
-  { slug: "dti", label: "Debt and DTI", hint: "Borrower debt calculation" },
-  { slug: "notes", label: "Official notes", hint: "Observations for the file" },
-  { slug: "submit", label: "Review and submit", hint: "Decision, package, handoff" },
+  { slug: "payoffs", label: "Student Loan Liabilities" },
+  { slug: "loan-payoff", label: "Loan Payoff" },
+  { slug: "review", label: "Review Application" },
+  { slug: "documents", label: "Documents" },
+  { slug: "underwriting", label: "Underwriting" },
+  { slug: "dti", label: "Credit Report Liabilities" },
+  { slug: "rates", label: "Rates" },
+  { slug: "submit", label: "Completion" },
 ] as const;
 
 export type WorkflowSlug = (typeof WORKFLOW_STEPS)[number]["slug"];
@@ -41,16 +43,19 @@ export function stepDone(application: Application, slug: WorkflowSlug): boolean 
   const calc = calculate(application);
 
   switch (slug) {
+    case "payoffs":
+    case "loan-payoff":
+      return Boolean(items.payoffs);
+    case "review":
+      return Boolean(application.borrower.fullName);
     case "documents":
       return Boolean(items.docs);
-    case "income":
+    case "underwriting":
       return Boolean(items.income);
-    case "payoffs":
-      return Boolean(items.payoffs);
     case "dti":
       return calc.dti != null && calc.dti > 0;
-    case "notes":
-      return Boolean(items["notes-income"] && items["notes-credit"] && items["notes-degree"]);
+    case "rates":
+      return application.requestedTerm > 0 && application.income.estimatedNewPayment > 0;
     case "submit":
       return (
         application.status === "senior-review" ||
@@ -93,7 +98,7 @@ export function stepFlags(application: Application, slug: WorkflowSlug): StepFla
     ];
   }
 
-  if (slug === "income") {
+  if (slug === "underwriting") {
     const flags: StepFlag[] = [];
     if (!items.find((item) => item.id === "docs")?.done) {
       flags.push({
@@ -152,24 +157,6 @@ export function stepFlags(application: Application, slug: WorkflowSlug): StepFla
   }
 
   return [];
-}
-
-export function packageLines(application: Application): [string, string][] {
-  const calc = calculate(application);
-  const notesFilled = Object.values(application.notes).filter((value) => value.trim()).length;
-  const verifiedDocs = application.documents.filter((doc) => doc.reviewStatus === "approved").length;
-
-  return [
-    ["Documents reviewed", `${verifiedDocs} of ${application.documents.length} approved`],
-    ["Verified monthly income", money(calc.monthlyIncome)],
-    ["Selected payoff total", money(calc.selectedPayoffTotal)],
-    ["New monthly payment", money(calc.estimatedNewPayment)],
-    ["Remaining monthly debt", money(calc.remainingMonthlyDebt)],
-    ["Borrower monthly debt", money(calc.qualifyingMonthlyDebt)],
-    ["DTI", percent(calc.dti)],
-    ["FICO", String(application.borrower.fico || "—")],
-    ["Official notes", `${notesFilled} of 7`],
-  ];
 }
 
 export function requiredDocument(kind: Application["documents"][number]["kind"]): boolean {

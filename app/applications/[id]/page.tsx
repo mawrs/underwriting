@@ -6,5 +6,5 @@ export default async function ApplicationIndex({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/applications/${id}/documents`);
+  redirect(`/applications/${id}/review`);
 }

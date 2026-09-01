@@ -2,91 +2,103 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FileTabs } from "@/components/application/FileTabs";
 import { TopNav } from "@/components/layout/TopNav";
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { money, shortDate } from "@/lib/format";
+import { OpenWorkbookButton } from "@/components/workbook/OpenWorkbookButton";
+import { FileNotesButton } from "@/components/notes/FileNotesButton";
+import { loanTypeFullLabel } from "@/lib/search";
 import { useApplication } from "@/lib/store";
 
 function fileRoute(pathname: string) {
   const application = pathname.match(/^\/applications\/([^/]+)/);
-  if (application) {
-    return { id: application[1], queueHref: "/queue", queueLabel: "Queue" };
-  }
+  if (application) return application[1];
   const senior = pathname.match(/^\/senior-queue\/([^/]+)/);
-  if (senior) {
-    return { id: senior[1], queueHref: "/senior-queue", queueLabel: "Senior queue" };
-  }
+  if (senior) return senior[1];
   return null;
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const file = fileRoute(pathname);
+  const fileId = fileRoute(pathname);
 
   return (
     <div
-      className={`flex h-full min-h-full flex-col text-charcoal ${
-        file ? "bg-gray-extra-light" : "bg-white"
-      }`}
+      className="flex h-full min-h-full flex-col bg-white text-charcoal"
     >
       <div className="sticky top-0 z-20">
         <TopNav />
-        {file ? (
-          <header className="border-b border-gray-light bg-white">
-            <FileHeader
-              id={file.id}
-              queueHref={file.queueHref}
-              queueLabel={file.queueLabel}
+        {fileId ? (
+          <>
+            <header className="bg-white">
+              <FileHeader id={fileId} />
+            </header>
+            <FileTabs
+              basePath={
+                pathname.startsWith("/senior-queue")
+                  ? `/senior-queue/${fileId}`
+                  : `/applications/${fileId}`
+              }
             />
-          </header>
+          </>
         ) : null}
       </div>
-      {file ? (
+      {fileId ? (
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       ) : (
-        <main className="flex min-h-0 w-full flex-1 flex-col bg-white px-2xl py-xl">{children}</main>
+        <main className="flex min-h-0 w-full flex-1 flex-col">{children}</main>
       )}
     </div>
   );
 }
 
-function FileHeader({
-  id,
-  queueHref,
-  queueLabel,
-}: {
-  id: string;
-  queueHref: string;
-  queueLabel: string;
-}) {
+function FileHeader({ id }: { id: string }) {
   const { application } = useApplication(id);
 
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-md px-2xl py-sm">
-      <div className="flex min-w-0 flex-wrap items-baseline gap-sm">
-        <Link href={queueHref} className="text-sm text-gray-medium hover:text-primary">
-          ← {queueLabel}
-        </Link>
-        {application ? (
-          <>
-            <strong className="text-base text-navy">{application.borrower.fullName}</strong>
-            <span className="font-mono text-sm text-gray-medium">{application.id}</span>
-            <span className="text-sm text-gray-medium">
-              {application.recordType} · {money(application.amount)}
-            </span>
-            <StatusBadge value={application.status} />
-          </>
-        ) : (
-          <span className="text-sm text-gray-medium">Loading file…</span>
-        )}
+  if (!application) {
+    return (
+      <div className="px-xl py-md">
+        <span className="text-sm text-gray-medium">Loading file…</span>
       </div>
-      {application?.lastSavedAt ? (
-        <span className="text-xs text-gray-medium">
-          Draft saved {shortDate(application.lastSavedAt)}
-        </span>
-      ) : (
-        <span className="text-xs text-gray-medium">Draft saved locally</span>
-      )}
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-[12px] border-b border-gray-lightest bg-white py-sm">
+      <div className="flex items-center justify-between gap-md px-sm pt-[12px]">
+        <div className="flex min-w-0 items-center gap-[12px]">
+          <Link href="/queue" aria-label="Back to queue" className="inline-flex size-6 items-center justify-center text-primary hover:text-primary-hover">
+            <BackIcon />
+          </Link>
+          <span className="text-2xl font-semibold text-black">{application.id}</span>
+          <span className="inline-flex h-9 items-center rounded-[2px] bg-gray-lightest px-[12px] text-xs font-semibold text-charcoal">
+            {loanTypeFullLabel(application)}
+          </span>
+        </div>
+        <div className="flex items-center gap-md">
+          <OpenWorkbookButton id={id} />
+          <FileNotesButton id={id} />
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-xl px-md text-sm">
+        <p className="flex gap-sm px-xs py-[12px]">
+          <span className="text-gray-dark">Borrower:</span>
+          <span className="font-semibold text-black">{application.borrower.fullName}</span>
+        </p>
+        <p className="flex gap-sm px-xs py-[12px]">
+          <span className="text-gray-dark">Co-Signer:</span>
+          <span className={application.cosigner ? "font-semibold text-black" : "text-gray-medium"}>
+            {application.cosigner?.fullName ?? "N/A"}
+          </span>
+        </p>
+      </div>
     </div>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

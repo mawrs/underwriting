@@ -16,11 +16,10 @@ Open [http://localhost:3000](http://localhost:3000). It redirects to the pre-rev
 ## Workflow
 
 1. Open a file from **Pre-review queue**
-2. Review documents (KYC, credit, degree, pay stubs)
-3. Confirm loan payoffs and Sallie Mae discrepancies
-4. Enter income, debt trades, and DTI inputs
-5. Add official notes
-6. Download XLS/PDF and submit to **Senior queue**
-7. Senior underwriter reviews pre-filled data, edits as needed, then approves or returns
+2. Work the tabs: student-loan payoffs, application review, documents, underwriting, credit-report liabilities, and rates
+3. Add comments from **Notes** in the file header
+4. On **Completion**, download the workbook, finish it in Excel (split view), and upload the completed sheet
+5. Submit to **Senior queue**
+6. Senior underwriter reviews pre-filled data, edits as needed, then approves or returns
 
-Review state stays in this browser (`localStorage`) and is never sent to a live LOS or customer. Use **Reset demo data** in the John Doe profile menu to restore the seed file for Madeline Prusinowski (`1411011`).
+Review state stays in this browser (`localStorage`) and is never sent to a live LOS or customer. Use **Reset demo data** in the Casey Morrow profile menu to restore the seed file for Elena Voss (`2084417`).

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useFileWorkspace } from "@/components/application/file-context";
 import { StageIntro } from "@/components/application/StageIntro";
+import { WorkbookActions } from "@/components/application/WorkbookActions";
 import { FlagLine } from "@/components/shared/FlagLine";
 import { seniorChanges } from "@/lib/diffs";
 import { useStore } from "@/lib/store";
@@ -28,10 +29,20 @@ export function SubmitPanel({ application }: { application: Application }) {
   const locked = readOnly;
 
   return (
-    <div className="space-y-md">
-      <StageIntro
-        title="Review and submit"
-        lede="One package, generated from what you entered. No re-keying into a separate workbook."
+    <StageIntro
+      title="Completion"
+      lede="Open the master workbook in a new window to cross-check the file, upload the completed copy, then send to second-level review."
+    >
+
+      <WorkbookActions
+        application={application}
+        readOnly={locked}
+        onUploaded={(fileName) =>
+          updateApplication(application.id, {
+            workbookFileName: fileName,
+            workbookUploadedAt: new Date().toISOString(),
+          })
+        }
       />
 
       <section className="uw-card-pad">
@@ -54,7 +65,7 @@ export function SubmitPanel({ application }: { application: Application }) {
             <dd>{percent(calc.dti)}</dd>
           </div>
           <div className="flex justify-between gap-md">
-            <dt className="text-gray-medium">Official notes</dt>
+            <dt className="text-gray-medium">Comments</dt>
             <dd>
               {Object.values(application.notes).filter((value) => value.trim()).length} of 7
             </dd>
@@ -174,6 +185,6 @@ export function SubmitPanel({ application }: { application: Application }) {
           </div>
         </section>
       )}
-    </div>
+    </StageIntro>
   );
 }

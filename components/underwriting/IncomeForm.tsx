@@ -154,7 +154,7 @@ export function IncomeForm({
         ) : null}
       </section>
 
-      <FlagList flags={stepFlags(application, "income")} />
+      <FlagList flags={stepFlags(application, "underwriting")} />
     </div>
   );
 }

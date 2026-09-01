@@ -172,6 +172,31 @@ button {
     background: var(--color-gray-lightest);
   }
 
+  .uw-tab {
+    border: 1px solid var(--color-gray-light);
+    border-radius: var(--radius-sm);
+    background: var(--color-white);
+    padding: 8px 16px;
+    font-size: 14px;
+    color: var(--color-charcoal);
+    white-space: nowrap;
+  }
+
+  .uw-tab:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .uw-tab[aria-current="page"] {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-white);
+  }
+
+  .uw-tab[aria-current="page"]:hover {
+    color: var(--color-white);
+  }
+
   .uw-table-head {
     background: var(--color-primary-bg);
     font-size: 12px;
@@ -179,5 +204,45 @@ button {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-gray-dark);
+  }
+
+  .uw-list-field {
+    display: flex;
+    height: 44px;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: var(--spacing-sm);
+    border: 1px solid var(--color-gray-light);
+    border-radius: var(--radius-xs);
+    background: var(--color-white);
+    padding: 8px 16px;
+    font-size: 16px;
+    color: var(--color-gray-dark);
+  }
+
+  .uw-list-field:focus-within {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+
+  .uw-list-th {
+    height: 44px;
+    border-bottom: 1px solid var(--color-gray-light);
+    padding: 12px 24px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-black);
+    white-space: nowrap;
+    background: var(--color-gray-extra-light);
+  }
+
+  .uw-list-td {
+    border-bottom: 1px solid var(--color-gray-light);
+    padding: 16px 24px;
+    font-size: 14px;
+    color: var(--color-gray-dark);
+    white-space: nowrap;
   }
 }

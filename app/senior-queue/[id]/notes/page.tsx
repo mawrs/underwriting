@@ -1,5 +1,6 @@
-import { NotesPage } from "@/components/notes/NotesPage";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <NotesPage />;
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  redirect(`/senior-queue/${id}/documents`);
 }
