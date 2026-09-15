@@ -26,6 +26,14 @@ export function normalizeLiability(item: Liability): Liability {
 }
 
 export function emptyStudentLoan(): Liability {
+  return emptyLoan({ selected: true });
+}
+
+export function emptyPayoffLoan(): Liability {
+  return emptyLoan({ selected: false });
+}
+
+function emptyLoan(partial: Partial<Liability>): Liability {
   return {
     id: `manual-${Date.now()}`,
     lender: "",
@@ -46,5 +54,6 @@ export function emptyStudentLoan(): Liability {
     confirmed: false,
     lenderAddresses: [],
     selectedAddress: "",
+    ...partial,
   };
 }

@@ -10,7 +10,7 @@ import type {
   UploadedDocument,
   WorkflowStatus,
 } from "./types";
-import { estimatedPayment } from "./calculations/income";
+import { estimatedPayment, seedCalculator } from "./calculations/income";
 import { defaultLenderAddresses } from "./payoffs";
 
 const PRIMARY_AMOUNT = 62494.9;
@@ -25,18 +25,24 @@ const emptyNotes = (): Notes => ({
   general: "",
 });
 
-const defaultIncome = (overrides: Partial<IncomeWorksheet> = {}): IncomeWorksheet => ({
-  selectedFrequency: "biweekly",
-  grossPay: 0,
-  hours: 40,
-  payPeriods: 16,
-  variableYtd: 0,
-  variablePayPeriods: 0,
-  priorYearIncome: 0,
-  housingPayment: 0,
-  estimatedNewPayment: 0,
-  ...overrides,
-});
+const defaultIncome = (overrides: Partial<IncomeWorksheet> = {}): IncomeWorksheet => {
+  const income = {
+    selectedFrequency: "biweekly" as const,
+    grossPay: 0,
+    hours: 40,
+    payPeriods: 16,
+    variableYtd: 0,
+    variablePayPeriods: 0,
+    priorYearIncome: 0,
+    housingPayment: 0,
+    estimatedNewPayment: 0,
+    ...overrides,
+  };
+  return {
+    ...income,
+    calculator: overrides.calculator ?? seedCalculator(income),
+  };
+};
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
@@ -52,12 +58,14 @@ function doc(partial: {
   uploadedAt: string;
   sourceStatus?: string;
   reviewStatus?: DocumentStatus;
+  internal?: boolean;
 }): UploadedDocument {
   return {
     sourceStatus: "",
     reviewStatus: "pending",
     reviewedAt: null,
     note: "",
+    internal: false,
     ...partial,
   };
 }
@@ -81,19 +89,147 @@ function liability(
   };
 }
 
-function tradesFromLiabilities(items: Liability[]): DebtTrade[] {
-  return items.map((item) => ({
-    id: item.id,
-    tradeType: item.category === "EDUCATIONAL" ? "Student Loan" : item.category,
-    accountNumber: item.accountNumber,
-    lender: item.lender,
-    category: item.category,
-    accountType: item.accountType,
-    highCredit: item.highCredit,
-    balance: item.balance,
-    payment: item.payment,
-    includeInDti: item.payment > 0,
-  }));
+function trade(
+  partial: Omit<DebtTrade, "sysPayment" | "adjPayment" | "originalBalance"> & Partial<DebtTrade>,
+): DebtTrade {
+  return {
+    ...partial,
+    sysPayment: partial.sysPayment ?? partial.payment,
+    adjPayment: partial.adjPayment ?? partial.payment,
+    originalBalance: partial.originalBalance ?? partial.highCredit,
+  };
+}
+
+function creditReportTrades(prefix = ""): DebtTrade[] {
+  const id = (key: string) => (prefix ? `${prefix}-${key}` : key);
+  return [
+    trade({
+      id: id("cr-auto-1"),
+      tradeType: "Installment",
+      accountNumber: "4482017731",
+      lender: "EQUIFAX TEST DATA",
+      category: "AUTOMOBILE",
+      accountType: "I",
+      highCredit: 40630,
+      balance: 27555,
+      payment: 559,
+      reportedAt: "10/2025",
+      ecoa: "J",
+      includeInDti: true,
+    }),
+    trade({
+      id: id("cr-card-1"),
+      tradeType: "Revolving",
+      accountNumber: "4482018842",
+      lender: "EQUIFAX TEST DATA",
+      category: "CREDIT_CARD",
+      accountType: "R",
+      highCredit: 1226,
+      balance: 0,
+      payment: 0,
+      reportedAt: "10/2025",
+      ecoa: "A",
+      includeInDti: false,
+    }),
+    trade({
+      id: id("cr-heloc-1"),
+      tradeType: "Line of credit",
+      accountNumber: "4482019953",
+      lender: "EQUIFAX TEST DATA",
+      category: "HOME_EQUITY_LINE_OF_CREDIT",
+      accountType: "C",
+      highCredit: 10060,
+      balance: 0,
+      payment: 0,
+      reportedAt: "10/2025",
+      ecoa: "I",
+      includeInDti: false,
+    }),
+    trade({
+      id: id("cr-card-2"),
+      tradeType: "Revolving",
+      accountNumber: "4482020064",
+      lender: "EQUIFAX TEST DATA",
+      category: "CREDIT_CARD",
+      accountType: "R",
+      highCredit: 3561,
+      balance: 0,
+      payment: 0,
+      reportedAt: "10/2025",
+      ecoa: "I",
+      includeInDti: false,
+    }),
+    trade({
+      id: id("cr-card-3"),
+      tradeType: "Revolving",
+      accountNumber: "4482021175",
+      lender: "EQUIFAX TEST DATA",
+      category: "CREDIT_CARD",
+      accountType: "R",
+      highCredit: 0,
+      balance: 0,
+      payment: 0,
+      reportedAt: "10/2025",
+      ecoa: "I",
+      includeInDti: false,
+    }),
+    trade({
+      id: id("cr-card-4"),
+      tradeType: "Revolving",
+      accountNumber: "4482022286",
+      lender: "EQUIFAX TEST DATA",
+      category: "CREDIT_CARD",
+      accountType: "R",
+      highCredit: 3528,
+      balance: 0,
+      payment: 0,
+      reportedAt: "10/2025",
+      ecoa: "I",
+      includeInDti: false,
+    }),
+    trade({
+      id: id("cr-mtg-1"),
+      tradeType: "Mortgage",
+      accountNumber: "4482023397",
+      lender: "EQUIFAX TEST DATA",
+      category: "FHA_REAL_ESTATE_MORTGAGE",
+      accountType: "M",
+      highCredit: 79256,
+      balance: 67054,
+      payment: 586,
+      reportedAt: "10/2025",
+      ecoa: "J",
+      includeInDti: true,
+    }),
+    trade({
+      id: id("cr-card-5"),
+      tradeType: "Revolving",
+      accountNumber: "4482024408",
+      lender: "EQUIFAX TEST DATA",
+      category: "FlexibleSpendingCreditCard",
+      accountType: "R",
+      highCredit: 8611,
+      balance: 3916,
+      payment: 78,
+      reportedAt: "10/2025",
+      ecoa: "I",
+      includeInDti: true,
+    }),
+    trade({
+      id: id("cr-auto-2"),
+      tradeType: "Installment",
+      accountNumber: "4482025519",
+      lender: "EQUIFAX TEST DATA",
+      category: "AUTOMOBILE",
+      accountType: "I",
+      highCredit: 21158,
+      balance: 0,
+      payment: 0,
+      reportedAt: "06/2021",
+      ecoa: "I",
+      includeInDti: false,
+    }),
+  ];
 }
 
 const primaryLiabilities: Liability[] = [
@@ -270,13 +406,64 @@ const primaryLiabilities: Liability[] = [
   }),
 ];
 
+function samplePayoffs(prefix = ""): Liability[] {
+  const id = (key: string) => (prefix ? `${prefix}-${key}` : key);
+  return [
+    liability({
+      id: id("po-1"),
+      lender: "SALLIE MAE",
+      accountNumber: "1E00181230912312312093",
+      loanIdentifier: "",
+      category: "EDUCATIONAL",
+      accountType: "I",
+      highCredit: 13559,
+      balance: 13559,
+      payment: 160,
+      adjCreditorName: "",
+      adjAccountNumber: "",
+      adjBalance: 0,
+      source: "sallie-mae",
+    }),
+    liability({
+      id: id("po-2"),
+      lender: "SALLIE MAE",
+      accountNumber: "1E00181230912312322104",
+      loanIdentifier: "",
+      category: "EDUCATIONAL",
+      accountType: "I",
+      highCredit: 9840,
+      balance: 9840,
+      payment: 142,
+      adjCreditorName: "",
+      adjAccountNumber: "",
+      adjBalance: 0,
+      source: "sallie-mae",
+    }),
+    liability({
+      id: id("po-3"),
+      lender: "LAKESHORE STUDENT AID",
+      accountNumber: "9E88220190815550117",
+      loanIdentifier: "",
+      category: "EDUCATIONAL",
+      accountType: "I",
+      highCredit: 11275,
+      balance: 11275,
+      payment: 155,
+      adjCreditorName: "",
+      adjAccountNumber: "",
+      adjBalance: 0,
+      source: "credit-report",
+    }),
+  ];
+}
+
 const elena: Application = {
   id: "2084417",
   opportunityName: "Elena Voss-2084417",
   recordType: "Tavant",
   stage: "UW - PreReview",
   amount: PRIMARY_AMOUNT,
-  requestedTerm: 240,
+  requestedTerm: 60,
   requestedRateType: "Fixed",
   applicationDate: "2026-08-20T20:39:00",
   hardCreditDate: "2026-08-16T08:12:00",
@@ -291,6 +478,14 @@ const elena: Application = {
     email: "elena.voss@example.com",
     zip: "55113",
     state: "MN",
+    street: "418 Snelling Ave N",
+    city: "Roseville",
+    phone: "(651) 555-0144",
+    ssnLast4: "4417",
+    citizenship: "U.S Citizen",
+    graduationYear: "2018",
+    relationship: "",
+    livingArrangement: "Renting",
     filingStatus: "Single",
     birthDate: "1996-09-21",
     creditScore: 731,
@@ -312,13 +507,13 @@ const elena: Application = {
   documents: [
     doc({
       id: "d-id",
-      name: "Identity Verification",
+      name: "Internal Identity Verification",
       kind: "identity",
       typeLabel: "Identification",
       description: "Identity Return",
-      fileName: "Identity_Verification_V1.pdf",
-      uploadedAt: "2026-08-20T20:39:00",
-      sourceStatus: "Submitted",
+      fileName: "Identity_Verification_[V1].pdf",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
+      internal: true,
     }),
     doc({
       id: "d-kyc",
@@ -327,8 +522,9 @@ const elena: Application = {
       typeLabel: "KYC",
       description: "Customer identification program",
       fileName: "KYC_CIP_2084417.pdf",
-      uploadedAt: "2026-08-20T20:40:00",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
       sourceStatus: "Submitted",
+      internal: true,
     }),
     doc({
       id: "d-cse",
@@ -336,18 +532,19 @@ const elena: Application = {
       kind: "credit-score-exception",
       typeLabel: "Credit Score Exception Notice",
       description: "Credit Score Exception Notice",
-      fileName: "Credit_Score_Exception_Notice.pdf",
-      uploadedAt: "2026-08-20T20:39:00",
+      fileName: "Credit Score Exception Notice.pdf",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
     }),
     doc({
       id: "d-cr",
       name: "Credit Report",
       kind: "credit-report",
       typeLabel: "Credit Report",
-      description: "Hard pull",
-      fileName: "HardPullFile_718294.pdf",
-      uploadedAt: "2026-08-20T20:39:00",
+      description: "",
+      fileName: "HardPullFile_5857.pdf",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
       sourceStatus: "Submitted",
+      internal: true,
     }),
     doc({
       id: "d-mla",
@@ -356,7 +553,17 @@ const elena: Application = {
       typeLabel: "MLA Verification",
       description: "Military Leave Act Return",
       fileName: "Equifax_MLA_Verification.pdf",
-      uploadedAt: "2026-08-20T20:39:00",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
+      internal: true,
+    }),
+    doc({
+      id: "d-disc",
+      name: "Application Disclosure Variable",
+      kind: "application-disclosure",
+      typeLabel: "Application Disclosure Variable",
+      description: "Application Disclosure Variable",
+      fileName: "Application_Disclosure.pdf",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
     }),
     doc({
       id: "d-deg",
@@ -365,8 +572,9 @@ const elena: Application = {
       typeLabel: "Education",
       description: "Bachelor of Science, Nursing — Midwest State University",
       fileName: "Degree_Verification_MSU.pdf",
-      uploadedAt: "2026-08-21T09:12:00",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
       sourceStatus: "Submitted",
+      internal: true,
     }),
     doc({
       id: "d-ps1",
@@ -375,7 +583,7 @@ const elena: Application = {
       typeLabel: "Income",
       description: "Biweekly pay stub ending 08/15/2026",
       fileName: "Paystub_08152026.pdf",
-      uploadedAt: "2026-08-21T09:14:00",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
       sourceStatus: "Submitted",
     }),
     doc({
@@ -385,20 +593,21 @@ const elena: Application = {
       typeLabel: "Income",
       description: "Biweekly pay stub ending 08/01/2026",
       fileName: "Paystub_08012026.pdf",
-      uploadedAt: "2026-08-21T09:14:00",
+      uploadedAt: "2025-12-15T01:38:00-05:00",
       sourceStatus: "Submitted",
     }),
   ],
   liabilities: primaryLiabilities,
+  payoffs: samplePayoffs(),
   income: defaultIncome({
     selectedFrequency: "biweekly",
     grossPay: 2650,
     payPeriods: 16,
     housingPayment: 1380,
-    estimatedNewPayment: round2(estimatedPayment(PRIMARY_AMOUNT, 240, 0.0839)),
+    estimatedNewPayment: round2(estimatedPayment(PRIMARY_AMOUNT, 60, 0.0639)),
     priorYearIncome: 66200,
   }),
-  debtTrades: tradesFromLiabilities(primaryLiabilities),
+  debtTrades: creditReportTrades(),
   notes: emptyNotes(),
   status: "pre-review",
   decision: "",
@@ -412,6 +621,13 @@ const elena: Application = {
   workbookFileName: null,
   workbookUploadedAt: null,
   workbookCopy: null,
+  opportunity: {},
+  underwriting: {
+    borrowerStatus: "UW - PreReview",
+    supervisorApproval: false,
+    mlaEligible: "no",
+    primaryHousingTradeId: "",
+  },
 };
 
 const sampleCosigner: Person = {
@@ -419,6 +635,14 @@ const sampleCosigner: Person = {
   email: "morgan.phelps@example.com",
   zip: "30318",
   state: "GA",
+  street: "88 Piedmont Ave NE",
+  city: "Atlanta",
+  phone: "(404) 555-0198",
+  ssnLast4: "0318",
+  citizenship: "U.S Citizen",
+  graduationYear: "1996",
+  relationship: "Parent",
+  livingArrangement: "Owning",
   filingStatus: "Single",
   birthDate: "1974-11-18",
   creditScore: 752,
@@ -491,10 +715,11 @@ function lightApplication(input: {
     },
     income: {
       ...elena.income,
-      estimatedNewPayment: round2(estimatedPayment(input.amount, 240, 0.0839)),
+      estimatedNewPayment: round2(estimatedPayment(input.amount, 60, 0.0639)),
     },
     liabilities,
-    debtTrades: tradesFromLiabilities(liabilities),
+    payoffs: samplePayoffs(input.id),
+    debtTrades: creditReportTrades(input.id),
     documents: elena.documents.map((item) => ({
       ...item,
       id: `${input.id}-${item.id}`,
@@ -512,6 +737,12 @@ function lightApplication(input: {
     approvedAt: null,
     primarySnapshot: null,
     lastSavedAt: null,
+    underwriting: {
+      borrowerStatus: input.hasCosigner ? "Awaiting CoSigner Completion" : "UW - PreReview",
+      supervisorApproval: false,
+      mlaEligible: "no",
+      primaryHousingTradeId: "",
+    },
   };
 }
 

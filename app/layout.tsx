@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${figtree.variable} h-full antialiased`}>
-      <body className={`${figtree.className} h-full min-h-full`}>
+    <html lang="en" className={`${figtree.variable} min-h-full antialiased`}>
+      <body className={`${figtree.className} min-h-full`}>
         <StoreProvider>
           <AppShell>{children}</AppShell>
         </StoreProvider>

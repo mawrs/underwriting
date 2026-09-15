@@ -14,11 +14,11 @@ export type CategoryFilter = "all" | "InSchool" | "Tavant";
 
 export function fileWorkspaceHref(app: Application) {
   const senior = app.status === "senior-review" || app.status === "approved";
-  return senior ? `/senior-queue/${app.id}/review` : `/applications/${app.id}/review`;
+  return senior ? `/senior-queue/${app.id}/payoffs` : `/applications/${app.id}/payoffs`;
 }
 
 export function loanTypeLabel(app: Application) {
-  return app.recordType === "InSchool" ? "In-School" : "Student Loan Refi";
+  return app.recordType === "InSchool" ? "Student Loan InSchool" : "Student Loan Refi";
 }
 
 export function loanTypeFullLabel(app: Application) {

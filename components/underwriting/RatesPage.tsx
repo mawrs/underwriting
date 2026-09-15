@@ -1,7 +1,7 @@
 "use client";
 
 import { useFileWorkspace } from "@/components/application/file-context";
-import { StageIntro } from "@/components/application/StageIntro";
+import { RateOffers } from "@/components/underwriting/RateOffers";
 import { RatesTable } from "@/components/underwriting/RatesTable";
 import { useApplication } from "@/lib/store";
 
@@ -10,16 +10,19 @@ export function RatesPage() {
   const { application, updateApplication } = useApplication(id);
   if (!application) return null;
 
+  function select(patch: Parameters<typeof updateApplication>[1]) {
+    updateApplication(id, patch);
+  }
+
   return (
-    <StageIntro
-      title="Rates"
-      lede="Same grid as underwriting. Select a cell to set term, rate type, and estimated P&I."
-    >
-      <RatesTable
-        application={application}
-        readOnly={readOnly}
-        onSelect={(patch) => updateApplication(id, patch)}
-      />
-    </StageIntro>
+    <div className="flex flex-col">
+      <section className="bg-white">
+        <div className="uw-card-header">
+          <h1 className="text-lg text-black">Rates</h1>
+        </div>
+        <RatesTable application={application} readOnly={readOnly} onSelect={select} />
+      </section>
+      <RateOffers application={application} readOnly={readOnly} onSelect={select} />
+    </div>
   );
 }

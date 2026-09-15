@@ -11,7 +11,7 @@ export function TopNav() {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const fileOpen = Boolean(pathname.match(/^\/(applications|senior-queue)\/[^/]+/));
-  const workbookOpen = pathname.startsWith("/workbook");
+  const workbookOpen = pathname.startsWith("/workbook") || pathname.startsWith("/view");
   const queueActive = !fileOpen && (pathname.startsWith("/queue") || pathname.startsWith("/senior-queue"));
   const searchActive = pathname.startsWith("/loan-search");
 
@@ -36,9 +36,6 @@ export function TopNav() {
                 className="h-11 w-[66px] object-contain"
               />
             </Link>
-            <span className="inline-flex items-center rounded-xs border border-warning bg-warning-bg px-sm py-[3px] text-xs font-semibold text-charcoal">
-              Demo Application
-            </span>
           </div>
           <nav className="flex items-center">
             <Link
@@ -79,12 +76,12 @@ export function TopNav() {
           {open ? (
             <div
               role="menu"
-              className="absolute top-[calc(100%+4px)] right-0 z-30 min-w-52 rounded-xs border border-gray-light bg-white py-xs shadow-[0px_1px_0.5px_0.05px_rgba(29,41,61,0.02)]"
+              className="absolute top-[calc(100%+4px)] right-0 z-30 min-w-52 border border-gray-light bg-white py-xs"
             >
               <button
                 type="button"
                 role="menuitem"
-                className="flex w-full items-center gap-sm px-md py-sm text-left text-sm text-charcoal hover:bg-gray-lightest hover:outline hover:outline-1 hover:outline-primary"
+                className="flex w-full items-center gap-sm px-md py-sm text-left text-sm text-charcoal hover:bg-gray-lightest"
                 onClick={() => {
                   resetStore();
                   setOpen(false);
@@ -147,25 +144,27 @@ function HeaderSearch() {
 function HeaderCloseIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 4l8 8M12 4l-8 8" stroke="#888A8D" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }
 
 function HeaderSearchIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden className="shrink-0">
-      <circle cx="8" cy="8" r="5.25" stroke="#535459" strokeWidth="1.2" />
-      <path d="M12 12l3.5 3.5" stroke="#535459" strokeWidth="1.2" strokeLinecap="round" />
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden className="shrink-0 text-gray-dark">
+      <circle cx="8" cy="8" r="5.25" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M12 12l3.5 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   );
 }
 
 function navClass(side: "left" | "right", active: boolean) {
   return [
-    "inline-flex items-center gap-xs border border-gray-light bg-white px-[17px] py-[9px] text-xs text-gray-dark",
+    "inline-flex items-center gap-xs px-[17px] py-[9px] text-xs",
     side === "left" ? "rounded-l-xs" : "rounded-r-xs border-l-0",
-    active ? "font-semibold text-primary" : "hover:text-primary",
+    active
+      ? "border border-primary bg-primary text-white"
+      : "border border-gray-light bg-white text-gray-dark hover:text-primary",
   ].join(" ");
 }
 

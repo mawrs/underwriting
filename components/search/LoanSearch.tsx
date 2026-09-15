@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ListPagination } from "@/components/list/ListPagination";
 import {
@@ -12,7 +13,7 @@ import {
   type SearchField,
 } from "@/lib/search";
 import { useStore } from "@/lib/store";
-import type { Application, WorkflowStatus } from "@/lib/types";
+import type { WorkflowStatus } from "@/lib/types";
 
 const SEARCH_FIELDS: { id: SearchField; label: string }[] = [
   { id: "loan-number", label: "Loan #" },
@@ -41,6 +42,30 @@ const COSIGNER: { id: CosignerFilter; label: string }[] = [
   { id: "none", label: "No co-signer" },
 ];
 
+type SearchState = {
+  query: string;
+  field: SearchField;
+  category: CategoryFilter;
+  borrowerStatus: "all" | WorkflowStatus;
+  cosigner: CosignerFilter;
+  fromDate: string;
+  toDate: string;
+  anyField?: boolean;
+};
+
+function searchState(overrides: Partial<SearchState> = {}): SearchState {
+  return {
+    query: "",
+    field: "loan-number",
+    category: "all",
+    borrowerStatus: "all",
+    cosigner: "all",
+    fromDate: "",
+    toDate: "",
+    ...overrides,
+  };
+}
+
 export function LoanSearch({ initialQuery = "" }: { initialQuery?: string }) {
   const { applications, ready } = useStore();
   const router = useRouter();
@@ -51,51 +76,20 @@ export function LoanSearch({ initialQuery = "" }: { initialQuery?: string }) {
   const [cosigner, setCosigner] = useState<CosignerFilter>("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [submitted, setSubmitted] = useState<null | {
-    query: string;
-    field: SearchField;
-    category: CategoryFilter;
-    borrowerStatus: "all" | WorkflowStatus;
-    cosigner: CosignerFilter;
-    fromDate: string;
-    toDate: string;
-    anyField?: boolean;
-  }>(
-    initialQuery
-      ? {
-          query: initialQuery,
-          field: "loan-number",
-          category: "all",
-          borrowerStatus: "all",
-          cosigner: "all",
-          fromDate: "",
-          toDate: "",
-          anyField: true,
-        }
-      : null,
+  const [submitted, setSubmitted] = useState<SearchState>(() =>
+    searchState(initialQuery ? { query: initialQuery, anyField: true } : {}),
   );
 
   useEffect(() => {
-    if (!initialQuery) {
-      setQuery("");
-      setSubmitted(null);
+    setQuery(initialQuery);
+    if (initialQuery) {
+      setSubmitted(searchState({ query: initialQuery, anyField: true }));
       return;
     }
-    setQuery(initialQuery);
-    setSubmitted({
-      query: initialQuery,
-      field: "loan-number",
-      category: "all",
-      borrowerStatus: "all",
-      cosigner: "all",
-      fromDate: "",
-      toDate: "",
-      anyField: true,
-    });
+    setSubmitted((prev) => (prev.anyField ? searchState() : prev));
   }, [initialQuery]);
 
   const rows = useMemo(() => {
-    if (!submitted) return [];
     const needle = submitted.query.trim().toLowerCase();
     return applications.filter((app) => {
       if (submitted.category !== "all" && app.recordType !== submitted.category) return false;
@@ -121,24 +115,13 @@ export function LoanSearch({ initialQuery = "" }: { initialQuery?: string }) {
 
   function runSearch(event: React.FormEvent) {
     event.preventDefault();
-    setSubmitted({
-      query,
-      field,
-      category,
-      borrowerStatus,
-      cosigner,
-      fromDate,
-      toDate,
-    });
+    setSubmitted(searchState({ query, field, category, borrowerStatus, cosigner, fromDate, toDate }));
   }
 
-  function openFile(app: Application, event?: { metaKey?: boolean; ctrlKey?: boolean }) {
-    const href = fileWorkspaceHref(app);
-    if (event?.metaKey || event?.ctrlKey) {
-      window.open(href, "_blank");
-      return;
-    }
-    router.push(href);
+  function clearSearch() {
+    setQuery("");
+    setSubmitted((prev) => ({ ...prev, query: "", anyField: false }));
+    if (initialQuery) router.replace("/loan-search");
   }
 
   if (!ready) {
@@ -150,58 +133,44 @@ export function LoanSearch({ initialQuery = "" }: { initialQuery?: string }) {
       <div className="flex flex-col gap-sm px-xl py-md">
         <h1 className="text-xl font-semibold text-black">Loan Search</h1>
         <form className="flex shrink-0 flex-col gap-sm" onSubmit={runSearch}>
-        <div className="grid grid-cols-1 gap-sm sm:grid-cols-2 xl:grid-cols-5">
-          <label className="uw-list-field">
-            <SearchIcon />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search"
-              className="h-7 min-w-0 flex-1 bg-transparent text-base text-gray-dark outline-none placeholder:text-gray-dark"
+          <div className="grid grid-cols-1 gap-sm sm:grid-cols-2 xl:grid-cols-5">
+            <label className="uw-list-field">
+              <SearchIcon />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search"
+                className="h-7 min-w-0 flex-1 bg-transparent text-base text-gray-dark outline-none placeholder:text-gray-dark"
+              />
+              {query ? (
+                <button type="button" aria-label="Clear search" onClick={clearSearch} className="text-gray-medium">
+                  <CloseIcon />
+                </button>
+              ) : null}
+            </label>
+            <Select value={field} onChange={(value) => setField(value as SearchField)} options={SEARCH_FIELDS} />
+            <Select value={category} onChange={(value) => setCategory(value as CategoryFilter)} options={CATEGORIES} />
+            <Select
+              value={borrowerStatus}
+              onChange={(value) => setBorrowerStatus(value as "all" | WorkflowStatus)}
+              options={STATUSES}
             />
-            {query ? (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => {
-                  setQuery("");
-                  setSubmitted(null);
-                  router.replace("/loan-search");
-                }}
-                className="text-gray-medium"
-              >
-                <CloseIcon />
-              </button>
-            ) : null}
-          </label>
-          <Select value={field} onChange={(value) => setField(value as SearchField)} options={SEARCH_FIELDS} />
-          <Select value={category} onChange={(value) => setCategory(value as CategoryFilter)} options={CATEGORIES} />
-          <Select
-            value={borrowerStatus}
-            onChange={(value) => setBorrowerStatus(value as "all" | WorkflowStatus)}
-            options={STATUSES}
-          />
-          <Select
-            value={cosigner}
-            onChange={(value) => setCosigner(value as CosignerFilter)}
-            options={COSIGNER}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-sm">
-          <DateField placeholder="From Date (dd/mm/yyyy)" value={fromDate} onChange={setFromDate} />
-          <DateField placeholder="To Date (dd/mm/yyyy)" value={toDate} onChange={setToDate} />
-          <button type="submit" className="h-11 w-[107px] rounded-xs bg-primary text-lg font-semibold text-white hover:bg-primary-hover">
-            Search
-          </button>
-        </div>
+            <Select value={cosigner} onChange={(value) => setCosigner(value as CosignerFilter)} options={COSIGNER} />
+          </div>
+          <div className="flex flex-wrap items-start gap-sm">
+            <DateField placeholder="From Date (dd/mm/yyyy)" value={fromDate} onChange={setFromDate} />
+            <DateField placeholder="To Date (dd/mm/yyyy)" value={toDate} onChange={setToDate} />
+            <button
+              type="submit"
+              className="h-11 w-[107px] rounded-xs bg-primary text-lg font-semibold text-white hover:bg-primary-hover"
+            >
+              Search
+            </button>
+          </div>
         </form>
       </div>
 
-      {!submitted ? (
-        <p className="flex flex-1 items-center justify-center border border-gray-light px-xl py-xl text-center text-sm text-gray-medium">
-          Search every file in the prototype — not only the queue you are working.
-        </p>
-      ) : rows.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="flex flex-1 items-center justify-center border border-gray-light px-xl py-xl text-center text-sm text-gray-medium">
           No files match those criteria.
         </p>
@@ -219,29 +188,47 @@ export function LoanSearch({ initialQuery = "" }: { initialQuery?: string }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((app) => (
-                <tr
-                  key={app.id}
-                  tabIndex={0}
-                  role="link"
-                  aria-label={`Open ${app.borrower.fullName}`}
-                  className="cursor-pointer hover:bg-white"
-                  onClick={(event) => openFile(app, event)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openFile(app);
-                    }
-                  }}
-                >
-                  <td className="uw-list-td">{loanTypeLabel(app)}</td>
-                  <td className="uw-list-td text-primary underline">{app.id}</td>
-                  <td className="uw-list-td text-primary underline">{app.borrower.fullName}</td>
-                  <td className="uw-list-td text-primary underline">{app.cosigner?.fullName ?? "—"}</td>
-                  <td className="uw-list-td">{BORROWER_STATUS_LABEL[app.status]}</td>
-                  <td className="uw-list-td">{app.cosigner ? "On file" : "—"}</td>
-                </tr>
-              ))}
+              {rows.map((app) => {
+                const href = fileWorkspaceHref(app);
+                return (
+                  <tr key={app.id} className="cursor-pointer hover:bg-gray-lightest">
+                    <td className="uw-list-td">
+                      <Link href={href} className="text-inherit">
+                        {loanTypeLabel(app)}
+                      </Link>
+                    </td>
+                    <td className="uw-list-td">
+                      <Link href={href} className="text-primary underline">
+                        {app.id}
+                      </Link>
+                    </td>
+                    <td className="uw-list-td">
+                      <Link href={href} className="text-primary underline">
+                        {app.borrower.fullName}
+                      </Link>
+                    </td>
+                    <td className="uw-list-td">
+                      {app.cosigner ? (
+                        <Link href={href} className="text-primary underline">
+                          {app.cosigner.fullName}
+                        </Link>
+                      ) : null}
+                    </td>
+                    <td className="uw-list-td">
+                      <Link href={href} className="text-inherit">
+                        {BORROWER_STATUS_LABEL[app.status]}
+                      </Link>
+                    </td>
+                    <td className="uw-list-td">
+                      {app.cosigner ? (
+                        <Link href={href} className="text-inherit">
+                          On file
+                        </Link>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <ListPagination count={rows.length} />
@@ -288,31 +275,41 @@ function DateField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="uw-list-field w-full max-w-[283px]">
+    <label className="uw-list-field relative w-[283px] shrink-0 cursor-pointer">
       <input
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-label={placeholder}
-        className="h-7 min-w-0 flex-1 bg-transparent text-base text-gray-dark outline-none"
+        className="absolute inset-0 z-10 cursor-pointer bg-transparent text-transparent [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:text-transparent"
       />
+      <span className="h-7 min-w-0 flex-1 text-base leading-[28px] text-gray-dark">
+        {value ? formatDisplayDate(value) : placeholder}
+      </span>
+      <CalendarIcon />
     </label>
   );
+}
+
+function formatDisplayDate(value: string) {
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
 }
 
 function CloseIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 4l8 8M12 4l-8 8" stroke="#888A8D" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }
 
 function SearchIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
-      <circle cx="11" cy="11" r="6.25" stroke="#535459" strokeWidth="1.4" />
-      <path d="M16 16l4 4" stroke="#535459" strokeWidth="1.4" strokeLinecap="round" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0 text-gray-dark">
+      <circle cx="11" cy="11" r="6.25" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M16 16l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }
@@ -321,6 +318,16 @@ function ChevronDownIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden className="shrink-0 text-gray-dark">
       <path d="M9 12l5 5 5-5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0 text-gray-dark">
+      <rect x="3.5" y="5.5" width="17" height="15" rx="2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M3.5 10h17" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 3.5v4M16 3.5v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }

@@ -1,11 +1,11 @@
 "use client";
 
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { shortDate } from "@/lib/format";
-import type { Application, DocumentStatus } from "@/lib/types";
-import { requiredDocument } from "@/lib/workflow";
+import type { MouseEvent } from "react";
+import { documentViewHref } from "@/lib/documents";
+import { estDateTime, titleCase } from "@/lib/format";
+import type { Application, DocumentStatus, UploadedDocument } from "@/lib/types";
 
-const statuses: DocumentStatus[] = [
+const STATUSES: DocumentStatus[] = [
   "pending",
   "submitted",
   "approved",
@@ -13,18 +13,40 @@ const statuses: DocumentStatus[] = [
   "incomplete",
 ];
 
+function statusLabel(doc: UploadedDocument) {
+  if (doc.reviewStatus === "pending") return doc.sourceStatus;
+  return titleCase(doc.reviewStatus);
+}
+
 export function DocumentsTable({
   application,
+  selected,
+  onSelectedChange,
   onChange,
   readOnly = false,
 }: {
   application: Application;
+  selected: string[];
+  onSelectedChange: (next: string[]) => void;
   onChange: (next: Application["documents"]) => void;
   readOnly?: boolean;
 }) {
-  function update(id: string, patch: Partial<Application["documents"][number]>) {
+  const docs = application.documents;
+  const allSelected = docs.length > 0 && selected.length === docs.length;
+
+  function toggle(id: string) {
+    onSelectedChange(
+      selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id],
+    );
+  }
+
+  function toggleAll() {
+    onSelectedChange(allSelected ? [] : docs.map((doc) => doc.id));
+  }
+
+  function update(id: string, patch: Partial<UploadedDocument>) {
     onChange(
-      application.documents.map((doc) =>
+      docs.map((doc) =>
         doc.id === id
           ? {
               ...doc,
@@ -32,94 +54,145 @@ export function DocumentsTable({
               reviewedAt:
                 patch.reviewStatus && patch.reviewStatus !== "pending"
                   ? new Date().toISOString()
-                  : doc.reviewedAt,
+                  : patch.reviewStatus === "pending"
+                    ? null
+                    : doc.reviewedAt,
             }
           : doc,
       ),
     );
   }
 
+  function onRowClick(event: MouseEvent<HTMLTableRowElement>, id: string) {
+    const target = event.target as HTMLElement;
+    if (target.closest("a, button, select, input, label")) return;
+    toggle(id);
+  }
+
   return (
-    <div className="uw-card">
-      <div className="border-b border-gray-light px-md py-sm">
-        <h2 className="text-sm font-semibold text-navy">Uploaded documents</h2>
-        <p className="text-xs text-gray-medium">
-          Cross-check KYC, credit, degree, and income documents. Saving a status does not send a letter.
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="uw-table-head">
-            <tr>
-              <th className="px-sm py-sm">Document</th>
-              <th className="px-sm py-sm">Type</th>
-              <th className="px-sm py-sm">File</th>
-              <th className="px-sm py-sm">Uploaded</th>
-              <th className="px-sm py-sm">Status</th>
-              <th className="px-sm py-sm">Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {application.documents.map((doc) => (
-              <tr key={doc.id} className="border-t border-gray-light align-top">
-                <td className="px-sm py-sm">
-                  <div className="flex flex-wrap items-center gap-sm">
-                    <span className="font-semibold">{doc.name}</span>
-                    <span
-                      className={`rounded-xs px-[7px] py-px text-[11px] ${
-                        requiredDocument(doc.kind)
-                          ? "bg-error-bg text-error"
-                          : "bg-gray-lightest text-gray-medium"
-                      }`}
+    <div className="overflow-x-auto rounded-xs border border-gray-light">
+      <table className="w-full min-w-[1400px] table-fixed text-left">
+        <thead>
+          <tr>
+            <th className="uw-list-th w-14">
+              <CheckBox checked={allSelected} onChange={toggleAll} label="Select all documents" />
+            </th>
+            <th className="uw-list-th w-[240px]">Document Name</th>
+            <th className="uw-list-th w-[160px]">Document Type</th>
+            <th className="uw-list-th">Description</th>
+            <th className="uw-list-th w-[260px]">Doc Uploaded</th>
+            <th className="uw-list-th w-[160px]">Doc Uploaded (EST)</th>
+            <th className="uw-list-th w-[170px]">Date Reviewed (EST)</th>
+            <th className="uw-list-th w-[120px]">Status</th>
+            <th className="uw-list-th w-[97px]">Internal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {docs.map((doc) => {
+            const checked = selected.includes(doc.id);
+            return (
+              <tr
+                key={doc.id}
+                className={`cursor-pointer align-middle ${checked ? "bg-gray-lightest" : "hover:bg-gray-extra-light"}`}
+                onClick={(event) => onRowClick(event, doc.id)}
+              >
+                <td className="uw-list-td w-px">
+                  <CheckBox
+                    checked={checked}
+                    onChange={() => toggle(doc.id)}
+                    label={`Select ${doc.name}`}
+                  />
+                </td>
+                <td className="uw-list-td whitespace-normal">{doc.name}</td>
+                <td className="uw-list-td whitespace-normal">{doc.typeLabel}</td>
+                <td className="uw-list-td whitespace-normal">{doc.description}</td>
+                <td className="uw-list-td whitespace-normal">
+                  <span>
+                    <a
+                      href={documentViewHref(application.id, doc.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary underline"
                     >
-                      {requiredDocument(doc.kind) ? "Required" : "Optional"}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-medium">{doc.description}</div>
+                      {doc.fileName}
+                    </a>
+                  </span>
                 </td>
-                <td className="px-sm py-sm">{doc.typeLabel}</td>
-                <td className="px-sm py-sm text-primary">{doc.fileName}</td>
-                <td className="px-sm py-sm text-xs text-gray-medium">
-                  {shortDate(doc.uploadedAt)}
-                </td>
-                <td className="px-sm py-sm">
+                <td className="uw-list-td">{estDateTime(doc.uploadedAt)}</td>
+                <td className="uw-list-td">{estDateTime(doc.reviewedAt)}</td>
+                <td className="uw-list-td">
                   {readOnly ? (
-                    <StatusBadge value={doc.reviewStatus} />
+                    statusLabel(doc)
                   ) : (
                     <select
-                      className="uw-input"
+                      className="appearance-none bg-transparent text-sm text-gray-dark outline-none"
                       value={doc.reviewStatus}
+                      aria-label={`${doc.name} status`}
                       onChange={(event) =>
                         update(doc.id, {
                           reviewStatus: event.target.value as DocumentStatus,
                         })
                       }
                     >
-                      {statuses.map((status) => (
+                      {STATUSES.map((status) => (
                         <option key={status} value={status}>
-                          {status}
+                          {status === "pending" ? doc.sourceStatus : titleCase(status)}
                         </option>
                       ))}
                     </select>
                   )}
                 </td>
-                <td className="px-sm py-sm">
-                  {readOnly ? (
-                    <span className="text-gray-dark">{doc.note || "—"}</span>
-                  ) : (
-                    <input
-                      className="uw-input w-56"
-                      value={doc.note}
-                      onChange={(event) => update(doc.id, { note: event.target.value })}
-                      placeholder="Reviewer observation"
-                    />
-                  )}
-                </td>
+                <td className="uw-list-td">{doc.internal ? "Y" : "N"}</td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
+  );
+}
+
+function CheckBox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      className={`flex size-7 shrink-0 items-center justify-center ${
+        checked ? "text-primary" : "text-gray-dark"
+      }`}
+    >
+      <span
+        className={`flex size-5 items-center justify-center rounded-[2px] border ${
+          checked ? "border-primary bg-primary text-white" : "border-gray-dark bg-white"
+        }`}
+      >
+        {checked ? <CheckIcon /> : null}
+      </span>
+    </button>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+      <path
+        d="M2.5 6.2l2.4 2.4 4.6-5.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

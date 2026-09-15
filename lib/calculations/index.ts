@@ -24,7 +24,7 @@ export function remainingMonthlyDebt(application: Application): number {
   );
   return application.debtTrades
     .filter((trade) => trade.includeInDti && !paidOffIds.has(trade.id))
-    .reduce((sum, trade) => sum + (trade.payment || 0), 0);
+    .reduce((sum, trade) => sum + ((trade.adjPayment ?? trade.payment) || 0), 0);
 }
 
 export function calculate(application: Application): CalculationResult {

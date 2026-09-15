@@ -120,14 +120,18 @@ export function exportWorkbook(application: Application) {
   XLSX.utils.book_append_sheet(
     wb,
     XLSX.utils.aoa_to_sheet([
-      ["Lender", "Category", "Type", "High credit", "Balance", "Payment", "In DTI"],
+      ["Lender", "Category", "Type", "Payment", "Sys Pmt", "Adj Pmt", "Balance", "Original Balance", "Reported", "ECOA", "In DTI"],
       ...application.debtTrades.map((trade) => [
         trade.lender,
         trade.category,
         trade.accountType,
-        trade.highCredit,
-        trade.balance,
         trade.payment,
+        trade.sysPayment ?? trade.payment,
+        trade.adjPayment ?? trade.payment,
+        trade.balance,
+        trade.originalBalance ?? trade.highCredit,
+        trade.reportedAt ?? "",
+        trade.ecoa ?? "",
         trade.includeInDti ? "Y" : "N",
       ]),
     ]),
@@ -149,6 +153,49 @@ export function exportWorkbook(application: Application) {
   const output = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
   downloadBlob(
     `UW-Audit-${application.id}.xlsx`,
+    new Blob([output], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }),
+  );
+}
+
+export function exportLiabilities(application: Application) {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet([
+      [
+        "Creditor Name",
+        "Type",
+        "Description",
+        "Payment",
+        "Sys Pmt",
+        "Adj Pmt",
+        "Balance",
+        "Original Balance",
+        "Reported",
+        "ECOA",
+        "In DTI",
+      ],
+      ...application.debtTrades.map((trade) => [
+        trade.lender,
+        trade.accountType,
+        trade.category,
+        trade.includeInDti ? trade.payment : "",
+        trade.sysPayment ?? trade.payment,
+        trade.adjPayment ?? trade.payment,
+        trade.balance,
+        trade.originalBalance ?? trade.highCredit,
+        trade.reportedAt ?? "",
+        trade.ecoa ?? "",
+        trade.includeInDti ? "Y" : "N",
+      ]),
+    ]),
+    "Liabilities",
+  );
+  const output = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+  downloadBlob(
+    `Liabilities-${application.id}.xlsx`,
     new Blob([output], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     }),

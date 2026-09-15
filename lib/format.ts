@@ -24,6 +24,23 @@ export function shortDate(value: string | null | undefined): string {
   });
 }
 
+export function estDateTime(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date
+    .toLocaleString("en-US", {
+      timeZone: "America/New_York",
+      month: "2-digit",
+      day: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .replace(",", "");
+}
+
 export function dateOnly(value: string | null | undefined): string {
   if (!value) return "—";
   const date = new Date(value);

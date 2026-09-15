@@ -126,6 +126,18 @@ button {
     padding: var(--spacing-md);
   }
 
+  .uw-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    box-sizing: border-box;
+    height: 58px;
+    padding: 0 var(--spacing-xl);
+    border-bottom: 1px solid var(--color-gray-light);
+    background: var(--color-gray-extra-light);
+  }
+
   .uw-input {
     border: 1px solid var(--color-gray-light);
     border-radius: var(--radius-sm);
@@ -244,5 +256,11 @@ button {
     font-size: 14px;
     color: var(--color-gray-dark);
     white-space: nowrap;
+  }
+
+  .uw-list-td > a {
+    display: block;
+    margin: -16px -24px;
+    padding: 16px 24px;
   }
 }

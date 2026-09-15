@@ -1,15 +1,13 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useFileWorkspace } from "@/components/application/file-context";
-import { StageIntro } from "@/components/application/StageIntro";
-import { LoanCard } from "@/components/payoffs/LoanCard";
-import { FlagList } from "@/components/shared/FlagLine";
+import { LOAN_ROW_GRID, LoanCard } from "@/components/payoffs/LoanCard";
 import { selectedPayoffTotal } from "@/lib/calculations";
 import { money } from "@/lib/format";
-import { emptyStudentLoan, isStudentLoan, normalizeLiability } from "@/lib/payoffs";
+import { emptyPayoffLoan, emptyStudentLoan, isStudentLoan, normalizeLiability } from "@/lib/payoffs";
 import { useApplication } from "@/lib/store";
 import type { Liability } from "@/lib/types";
-import { stepFlags } from "@/lib/workflow";
 
 export function PayoffsPage({ mode = "all" }: { mode?: "all" | "payoff" }) {
   const { id, readOnly } = useFileWorkspace();
@@ -18,77 +16,128 @@ export function PayoffsPage({ mode = "all" }: { mode?: "all" | "payoff" }) {
   const file = application;
 
   const studentLoans = file.liabilities.map(normalizeLiability).filter(isStudentLoan);
-  const loans = mode === "payoff" ? studentLoans.filter((item) => item.selected) : studentLoans;
-  const selected = studentLoans.filter((item) => item.selected);
+  const payoffLoans = (file.payoffs ?? []).map(normalizeLiability);
+  const liabilities = mode === "all";
+  const loans = liabilities ? studentLoans : payoffLoans;
+  const selected = loans.filter((item) => item.selected);
 
-  function setLiabilities(next: Liability[]) {
-    updateApplication(id, { liabilities: next.map(normalizeLiability) });
+  function setLoans(next: Liability[]) {
+    if (liabilities) {
+      const others = file.liabilities.filter((item) => !isStudentLoan(item));
+      updateApplication(id, { liabilities: [...others, ...next.map(normalizeLiability)] });
+      return;
+    }
+    updateApplication(id, { payoffs: next.map(normalizeLiability) });
   }
 
   function update(loanId: string, patch: Partial<Liability>) {
-    setLiabilities(file.liabilities.map((item) => (item.id === loanId ? { ...item, ...patch } : item)));
+    setLoans(loans.map((item) => (item.id === loanId ? { ...item, ...patch } : item)));
   }
 
   return (
-    <div className="flex min-h-full flex-col">
-      <StageIntro title={mode === "payoff" ? "Loan Payoff" : "Student Loan Liabilities"}>
-        {mode === "all" ? (
-          <div className="mb-lg flex flex-wrap items-start justify-between gap-md">
-            <div>
-              <h2 className="text-xl font-semibold text-black">Which loan(s) do you want to pay off?</h2>
-              <p className="mt-xs max-w-[62ch] text-sm text-gray-medium">
-                Student loans from the credit report appear below. Select the ones this refinance will pay off.
-              </p>
-            </div>
+    <div className="flex flex-col bg-white">
+      <div className="uw-card-header">
+        <h1 className="text-lg text-black">
+          {liabilities ? "Student Loan Liabilities" : "Loan Payoff"}
+        </h1>
+        {liabilities ? (
+          <PromptLine prompt="Not seeing your loan?">
             <button
               type="button"
-              className="uw-btn-secondary"
               disabled={readOnly}
-              onClick={() => setLiabilities([...file.liabilities, emptyStudentLoan()])}
+              className={`${actionClass} disabled:text-gray-medium`}
+              onClick={() => setLoans([...loans, emptyStudentLoan()])}
             >
-              Add Other Student Loan
+              Add another student loan
             </button>
-          </div>
+          </PromptLine>
         ) : null}
+      </div>
 
+      <div className="flex flex-col">
         {loans.length === 0 ? (
-          <p className="text-sm text-gray-medium">
-            {mode === "payoff"
-              ? "No loans are selected for payoff. Choose them on Student Loan Liabilities."
-              : "No student loans are on this file."}
+          <p className="px-xl py-lg text-sm text-gray-medium">
+            {liabilities ? "No student loans are on this file." : "No loans are on this payoff list."}
           </p>
+        ) : liabilities ? (
+          <div>
+            <div
+              className={`${LOAN_ROW_GRID} h-11 border-b border-gray-light bg-gray-lightest px-xl text-sm font-semibold whitespace-nowrap text-black`}
+            >
+              <div className="flex items-center gap-lg">
+                <span className="size-[21px] shrink-0" aria-hidden />
+                <span>Loan Amount</span>
+              </div>
+              <span>Account Number</span>
+              <span>Monthly Payment</span>
+            </div>
+            {loans.map((item, index) => (
+              <LoanCard
+                key={item.id}
+                item={item}
+                variant="all"
+                last={index === loans.length - 1}
+                readOnly={readOnly}
+                onChange={(patch) => update(item.id, patch)}
+              />
+            ))}
+          </div>
         ) : (
           <div className="flex flex-col gap-md">
             {loans.map((item) => (
               <LoanCard
                 key={item.id}
                 item={item}
-                variant={mode}
+                variant="payoff"
                 readOnly={readOnly}
                 onChange={(patch) => update(item.id, patch)}
               />
             ))}
+            <PromptLine prompt="Not seeing your loan?" className="px-md">
+              <button
+                type="button"
+                disabled={readOnly}
+                className={`${actionClass} disabled:text-gray-medium`}
+                onClick={() => setLoans([...loans, emptyPayoffLoan()])}
+              >
+                Add another student loan
+              </button>
+            </PromptLine>
           </div>
         )}
+      </div>
 
-        <div className="mt-lg">
-          <FlagList flags={stepFlags(file, "payoffs")} />
+      <div className="flex items-center justify-between gap-md border-t border-gray-light bg-gray-lightest px-xl py-lg">
+        <div>
+          <p className="text-sm text-gray-dark">Total amount to be paid off</p>
+          <p className="text-xl font-semibold text-black">
+            {money(liabilities ? selectedPayoffTotal(selected) : selected.reduce((sum, item) => sum + (item.adjBalance || item.balance), 0))}
+          </p>
         </div>
-      </StageIntro>
+        <p className="text-xs text-gray-dark">
+          {selected.length === 1 ? "1 loan selected" : `${selected.length} loans selected`}
+        </p>
+      </div>
+    </div>
+  );
+}
 
-      {mode === "payoff" ? (
-        <footer className="sticky bottom-0 mt-auto border-t border-gray-light bg-white px-xl py-md">
-          <div className="flex items-end justify-between gap-md">
-            <div>
-              <p className="text-sm text-gray-medium">Total amount to be paid off</p>
-              <p className="text-2xl font-semibold text-black">{money(selectedPayoffTotal(selected))}</p>
-            </div>
-            <p className="text-sm text-gray-medium">
-              {selected.length} loan(s) selected
-            </p>
-          </div>
-        </footer>
-      ) : null}
+const actionClass =
+  "inline-flex appearance-none items-center gap-sm border-0 bg-transparent p-0 text-sm font-semibold leading-[1.42] text-primary hover:text-primary-hover";
+
+function PromptLine({
+  prompt,
+  className = "",
+  children,
+}: {
+  prompt: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`flex items-center justify-end gap-sm text-sm ${className}`.trim()}>
+      <span className="text-gray-dark">{prompt}</span>
+      {children}
     </div>
   );
 }

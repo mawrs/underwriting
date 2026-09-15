@@ -1,5 +1,6 @@
 "use client";
 
+import { FileTabs } from "@/components/application/FileTabs";
 import {
   FileWorkspaceContext,
   type FileMode,
@@ -42,13 +43,14 @@ export function FileWorkspace({
 
   return (
     <FileWorkspaceContext.Provider value={value}>
-      <div className="flex min-h-0 flex-1 flex-col bg-white">
+      <div className="flex flex-col bg-white">
         {application.status === "returned" && application.seniorNotes ? (
           <div className="border-b border-orange bg-orange-bg px-xl py-sm text-sm text-orange-hover">
             Returned by senior: {application.seniorNotes}
           </div>
         ) : null}
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
+        <FileTabs basePath={value.basePath} />
+        {children}
       </div>
     </FileWorkspaceContext.Provider>
   );

@@ -10,15 +10,19 @@ import {
   type ReactNode,
 } from "react";
 import { calculate } from "./calculations";
+import { hydrateCalculator } from "./calculations/income";
 import { seedApplications } from "./mock-data";
 import type {
   Application,
   ApplicationPatch,
+  DebtTrade,
   Decision,
+  Person,
   Role,
+  UnderwritingExtras,
 } from "./types";
 
-const STORAGE_KEY = "uw-prototype-v2";
+const STORAGE_KEY = "uw-prototype-v7";
 const SERVER_SNAPSHOT = seedApplications;
 
 type Listener = () => void;
@@ -43,6 +47,52 @@ function persist(next: Application[]) {
   emit();
 }
 
+function hydratePerson(person: Person | null | undefined): Person | null {
+  if (!person) return null;
+  return {
+    ...person,
+    street: person.street ?? "",
+    city: person.city ?? "",
+    phone: person.phone ?? "",
+    ssnLast4: person.ssnLast4 ?? "",
+    citizenship: person.citizenship ?? "",
+    graduationYear: person.graduationYear ?? "",
+    relationship: person.relationship ?? "",
+    livingArrangement: person.livingArrangement ?? "",
+  };
+}
+
+function hydrateTrades(trades: DebtTrade[] | undefined, id: string): DebtTrade[] {
+  const seeded = seedApplications.find((item) => item.id === id)?.debtTrades ?? [];
+  if (!trades?.length) return clone(seeded);
+  const isCreditFixture = trades.some((item) => item.lender === "EQUIFAX TEST DATA");
+  if (!isCreditFixture && seeded.some((item) => item.lender === "EQUIFAX TEST DATA")) {
+    return clone(seeded);
+  }
+  return trades.map((item) => ({
+    ...item,
+    sysPayment: item.sysPayment ?? item.payment,
+    adjPayment: item.adjPayment ?? item.payment,
+    originalBalance: item.originalBalance ?? item.highCredit,
+    reportedAt: item.reportedAt ?? "",
+    ecoa: item.ecoa ?? "",
+  }));
+}
+
+function hydrateUnderwriting(
+  extras: UnderwritingExtras | undefined,
+  item: Pick<Application, "cosigner" | "stage">,
+): UnderwritingExtras {
+  return {
+    borrowerStatus:
+      extras?.borrowerStatus ??
+      (item.cosigner ? "Awaiting CoSigner Completion" : item.stage || "Lead"),
+    supervisorApproval: extras?.supervisorApproval ?? false,
+    mlaEligible: extras?.mlaEligible ?? "no",
+    primaryHousingTradeId: extras?.primaryHousingTradeId ?? "",
+  };
+}
+
 function loadApplications(): Application[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -53,9 +103,20 @@ function loadApplications(): Application[] {
     }
     return parsed.map((item) => ({
       ...item,
+      borrower: hydratePerson(item.borrower) ?? item.borrower,
+      cosigner: hydratePerson(item.cosigner),
       workbookFileName: item.workbookFileName ?? null,
       workbookUploadedAt: item.workbookUploadedAt ?? null,
       workbookCopy: item.workbookCopy ?? null,
+      opportunity: item.opportunity ?? {},
+      underwriting: hydrateUnderwriting(item.underwriting, item),
+      income: item.income
+        ? { ...item.income, calculator: hydrateCalculator(item.income) }
+        : item.income,
+      debtTrades: hydrateTrades(item.debtTrades, item.id),
+      payoffs: Array.isArray(item.payoffs)
+        ? item.payoffs
+        : clone(seedApplications.find((seed) => seed.id === item.id)?.payoffs ?? []),
     }));
   } catch {
     return clone(seedApplications);
@@ -113,14 +174,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ...item,
         ...patch,
         borrower: patch.borrower ?? item.borrower,
+        cosigner: patch.cosigner !== undefined ? patch.cosigner : item.cosigner,
+        employment: patch.employment ?? item.employment,
         income: patch.income ?? item.income,
         documents: patch.documents ?? item.documents,
         liabilities: patch.liabilities ?? item.liabilities,
+        payoffs: patch.payoffs ?? item.payoffs,
         debtTrades: patch.debtTrades ?? item.debtTrades,
         notes: patch.notes ?? item.notes,
         workbookFileName: patch.workbookFileName ?? item.workbookFileName,
         workbookUploadedAt: patch.workbookUploadedAt ?? item.workbookUploadedAt,
         workbookCopy: patch.workbookCopy ?? item.workbookCopy,
+        opportunity: patch.opportunity
+          ? { ...item.opportunity, ...patch.opportunity }
+          : item.opportunity,
+        underwriting: patch.underwriting
+          ? { ...item.underwriting, ...patch.underwriting }
+          : item.underwriting,
+        underwriter: patch.underwriter ?? item.underwriter,
         lastSavedAt: new Date().toISOString(),
       };
     });
@@ -136,6 +207,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       submittedBy: current.underwriter,
       documents: clone(current.documents),
       liabilities: clone(current.liabilities),
+      payoffs: clone(current.payoffs),
       income: clone(current.income),
       debtTrades: clone(current.debtTrades),
       notes: clone(current.notes),

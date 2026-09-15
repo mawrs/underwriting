@@ -5,52 +5,112 @@ import { money } from "@/lib/format";
 import { normalizeLiability } from "@/lib/payoffs";
 import type { Liability, PayoffType } from "@/lib/types";
 
+export const LOAN_ROW_GRID =
+  "grid grid-cols-[minmax(0,1fr)_12.5rem_9.5rem] items-center gap-3xl";
+
 export function LoanCard({
   item,
   variant,
+  last,
   readOnly,
   onChange,
 }: {
   item: Liability;
   variant: "all" | "payoff";
+  last?: boolean;
   readOnly: boolean;
   onChange: (patch: Partial<Liability>) => void;
 }) {
   const loan = normalizeLiability(item);
 
+  function toggle() {
+    if (readOnly) return;
+    onChange({ selected: !loan.selected });
+  }
+
+  if (variant === "payoff") {
+    return (
+      <article className="flex flex-col gap-md rounded-xs border border-gray-light bg-white px-xl py-lg">
+        <div className="flex items-center justify-between gap-xl">
+          <div className="flex min-w-0 items-center gap-lg">
+            <SelectBox loan={loan} readOnly={readOnly} onToggle={toggle} />
+            <div className="min-w-0">
+              <p className="text-xl font-semibold text-black">{money(loan.balance)}</p>
+              <p className="text-sm text-gray-medium">{loan.lender || "New student loan"}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-3xl">
+            <div>
+              <p className="text-xs text-gray-medium">Account Number</p>
+              <p className="text-sm font-semibold text-black tabular-nums">{loan.accountNumber || "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-medium">Monthly Payment</p>
+              <p className="text-sm font-semibold text-black tabular-nums">{money(loan.payment)}</p>
+            </div>
+          </div>
+        </div>
+        <PayoffFields loan={loan} readOnly={readOnly} onChange={onChange} />
+      </article>
+    );
+  }
+
   return (
     <article
-      className={`max-w-[696px] rounded-sm border bg-white p-md ${
-        loan.selected ? "border-primary-bg-dev" : "border-gray-light"
-      }`}
+      className={`bg-white px-xl py-lg hover:bg-gray-lightest ${
+        last ? "" : "border-b border-gray-light"
+      } ${readOnly ? "" : "cursor-pointer"}`}
+      onClick={toggle}
     >
-      <div className="flex flex-wrap items-start gap-lg">
-        <label className="flex items-start gap-sm pt-[2px]">
-          <input
-            type="checkbox"
-            className="mt-[3px] size-4 accent-primary"
-            checked={loan.selected}
-            disabled={readOnly}
-            onChange={(event) => onChange({ selected: event.target.checked })}
-          />
-          <span>
-            <span className="block text-xl font-semibold text-black">{money(loan.balance)}</span>
-            <span className="text-sm text-gray-dark">{loan.lender || "New student loan"}</span>
-          </span>
-        </label>
-        {variant === "all" ? (
-          <div className="grid min-w-0 flex-1 grid-cols-3 gap-md">
-            <ReadField label="Account Number" value={loan.accountNumber || "—"} />
-            <ReadField label="Loan Identifier" value={loan.loanIdentifier || "—"} />
-            <ReadField label="Monthly Payment" value={money(loan.payment)} />
+      <div className={LOAN_ROW_GRID}>
+        <div className="flex min-w-0 items-center gap-lg">
+          <SelectBox loan={loan} readOnly={readOnly} onToggle={toggle} />
+          <div className="min-w-0">
+            <p className="text-xl font-semibold text-black">{money(loan.balance)}</p>
+            <p className="text-sm text-gray-medium">{loan.lender || "New student loan"}</p>
           </div>
-        ) : null}
+        </div>
+        <p className="truncate text-sm font-semibold text-black tabular-nums">{loan.accountNumber || "—"}</p>
+        <p className="text-sm font-semibold text-black tabular-nums">{money(loan.payment)}</p>
       </div>
-
-      {variant === "payoff" ? (
-        <PayoffFields loan={loan} readOnly={readOnly} onChange={onChange} />
-      ) : null}
     </article>
+  );
+}
+
+function SelectBox({
+  loan,
+  readOnly,
+  onToggle,
+}: {
+  loan: Liability;
+  readOnly: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={loan.selected}
+      aria-label={`Select ${loan.lender || "student loan"}`}
+      disabled={readOnly}
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggle();
+      }}
+      className={`flex size-[21px] shrink-0 items-center justify-center rounded-[2px] border ${
+        loan.selected ? "border-primary bg-primary text-white" : "border-gray-dark bg-white"
+      } disabled:opacity-50`}
+    >
+      {loan.selected ? <CheckIcon /> : null}
+    </button>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+      <path d="M2.5 6.2l2.4 2.4 4.6-5.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -76,8 +136,14 @@ function PayoffFields({
   }
 
   return (
-    <div className="mt-md flex flex-col gap-md">
-      <div className="grid grid-cols-2 gap-md">
+    <div className="flex flex-col gap-xl">
+      <div className="grid grid-cols-3 gap-md">
+        <TextField
+          label="Loan Identifier"
+          value={loan.adjLoanIdentifier}
+          readOnly={readOnly}
+          onChange={(value) => onChange({ adjLoanIdentifier: value })}
+        />
         <TextField
           label="Adj Creditor Name"
           value={loan.adjCreditorName}
@@ -90,48 +156,31 @@ function PayoffFields({
           readOnly={readOnly}
           onChange={(value) => onChange({ adjAccountNumber: value })}
         />
-        <TextField
-          label="Loan Identifier"
-          value={loan.adjLoanIdentifier}
-          readOnly={readOnly}
-          onChange={(value) => onChange({ adjLoanIdentifier: value })}
-        />
-        <TextField
-          label="Adj Loan Balance"
-          value={loan.adjBalance ? String(loan.adjBalance) : ""}
-          readOnly={readOnly}
-          prefix="$"
-          onChange={(value) => onChange({ adjBalance: Number(value) || 0 })}
-        />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-md">
+      <div className="flex flex-col gap-sm">
         <PayoffToggle
           value={loan.payoffType}
           readOnly={readOnly}
           onChange={(payoffType) => onChange({ payoffType })}
         />
-        <label className="inline-flex items-center gap-sm text-sm text-gray-dark">
-          <input
-            type="checkbox"
-            className="size-4 accent-primary"
-            checked={loan.confirmed}
-            disabled={readOnly}
-            onChange={(event) => onChange({ confirmed: event.target.checked })}
-          />
-          Confirmed
-        </label>
+        <TextField
+          label="Adj Loan Balance"
+          value={loan.adjBalance ? String(loan.adjBalance) : ""}
+          readOnly={readOnly}
+          onChange={(value) => onChange({ adjBalance: Number(value) || 0 })}
+        />
       </div>
 
       <div>
-        <p className="mb-xs text-xs text-gray-medium">Lender Address</p>
+        <p className="mb-sm text-xs text-gray-medium">Lender Address</p>
         <div className="flex flex-col gap-sm">
           {loan.lenderAddresses.map((address) => (
-            <label key={address} className="flex items-start gap-sm text-sm text-black">
+            <label key={address} className="flex items-center gap-xs text-sm font-semibold text-black">
               <input
                 type="radio"
                 name={`address-${loan.id}`}
-                className="mt-[3px] accent-primary"
+                className="size-4 accent-success"
                 checked={loan.selectedAddress === address}
                 disabled={readOnly}
                 onChange={() => onChange({ selectedAddress: address })}
@@ -161,7 +210,7 @@ function PayoffFields({
         ) : (
           <button
             type="button"
-            className="mt-sm text-sm text-primary hover:text-primary-hover"
+            className="mt-sm inline-flex items-center gap-sm text-sm font-semibold text-primary hover:text-primary-hover"
             onClick={() => setAddingAddress(true)}
           >
             + Add new address
@@ -182,15 +231,15 @@ function PayoffToggle({
   onChange: (value: PayoffType) => void;
 }) {
   return (
-    <div className="inline-flex items-center rounded-full border border-gray-light p-[2px]">
+    <div className="inline-flex items-center self-start overflow-hidden rounded-full border border-primary">
       <button
         type="button"
         disabled={readOnly}
         onClick={() => onChange("full")}
         className={
           value === "full"
-            ? "rounded-full bg-primary px-md py-xs text-sm font-semibold text-white"
-            : "rounded-full px-md py-xs text-sm text-primary"
+            ? "bg-primary px-md py-sm text-sm font-semibold text-white"
+            : "px-md py-sm text-sm text-gray-dark"
         }
       >
         Full Payoff
@@ -201,11 +250,11 @@ function PayoffToggle({
         onClick={() => onChange("partial")}
         className={
           value === "partial"
-            ? "rounded-full bg-primary px-md py-xs text-sm font-semibold text-white"
-            : "rounded-full px-md py-xs text-sm text-primary"
+            ? "bg-primary px-md py-sm text-sm font-semibold text-white"
+            : "px-md py-sm text-sm text-gray-dark"
         }
       >
-        Partial payoff
+        Partial Payoff
       </button>
     </div>
   );
@@ -215,41 +264,28 @@ function TextField({
   label,
   value,
   readOnly,
-  prefix,
   onChange,
 }: {
   label: string;
   value: string;
   readOnly: boolean;
-  prefix?: string;
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="flex min-w-0 flex-col gap-xs">
-      <span className="text-xs text-gray-medium">{label}</span>
+    <label className="flex min-w-0 flex-col">
       {readOnly ? (
-        <span className="text-sm text-black">
-          {prefix && value ? `${prefix} ${value}` : value || "—"}
-        </span>
+        <>
+          <span className="mb-xs text-xs text-gray-medium">{label}</span>
+          <span className="text-sm text-black">{value || "—"}</span>
+        </>
       ) : (
-        <span className="uw-input flex items-center gap-xs">
-          {prefix ? <span className="text-gray-medium">{prefix}</span> : null}
-          <input
-            className="min-w-0 flex-1 bg-transparent outline-none"
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-          />
-        </span>
+        <input
+          className="h-[60px] w-full rounded-xs border border-gray-light bg-white px-md text-base text-charcoal outline-none placeholder:text-gray-dark focus:outline-2 focus:outline-offset-1 focus:outline-primary"
+          value={value}
+          placeholder={label}
+          onChange={(event) => onChange(event.target.value)}
+        />
       )}
     </label>
-  );
-}
-
-function ReadField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-xs text-gray-medium">{label}</p>
-      <p className="truncate text-sm text-black">{value}</p>
-    </div>
   );
 }

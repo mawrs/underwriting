@@ -36,7 +36,7 @@ export function QueueViewSelect({ value }: { value: QueueViewId }) {
       {open ? (
         <ul
           role="listbox"
-          className="absolute top-[calc(100%+4px)] right-0 z-30 min-w-full rounded-xs border border-gray-light bg-white py-xs shadow-[0px_1px_0.5px_0.05px_rgba(29,41,61,0.02)]"
+          className="absolute top-[calc(100%+4px)] right-0 z-30 min-w-full border border-gray-light bg-white py-xs"
         >
           {QUEUE_VIEWS.map((view) => (
             <li key={view.id}>
@@ -44,7 +44,7 @@ export function QueueViewSelect({ value }: { value: QueueViewId }) {
                 type="button"
                 role="option"
                 aria-selected={view.id === value}
-                className={`block w-full px-md py-sm text-left text-sm text-charcoal hover:bg-gray-lightest hover:outline hover:outline-1 hover:outline-primary ${
+                className={`block w-full px-md py-sm text-left text-sm text-charcoal hover:bg-gray-lightest ${
                   view.id === value ? "bg-gray-lightest" : ""
                 }`}
                 onClick={() => {

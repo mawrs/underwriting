@@ -2,11 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileTabs } from "@/components/application/FileTabs";
+import { FileActions } from "@/components/application/FileActions";
 import { TopNav } from "@/components/layout/TopNav";
-import { OpenWorkbookButton } from "@/components/workbook/OpenWorkbookButton";
-import { FileNotesButton } from "@/components/notes/FileNotesButton";
-import { loanTypeFullLabel } from "@/lib/search";
 import { useApplication } from "@/lib/store";
 
 function fileRoute(pathname: string) {
@@ -23,27 +20,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="flex h-full min-h-full flex-col bg-white text-charcoal"
+      className={
+        fileId
+          ? "flex min-h-full flex-col bg-white text-charcoal"
+          : "flex h-dvh min-h-dvh flex-col bg-white text-charcoal"
+      }
     >
       <div className="sticky top-0 z-20">
         <TopNav />
         {fileId ? (
-          <>
-            <header className="bg-white">
-              <FileHeader id={fileId} />
-            </header>
-            <FileTabs
-              basePath={
-                pathname.startsWith("/senior-queue")
-                  ? `/senior-queue/${fileId}`
-                  : `/applications/${fileId}`
-              }
-            />
-          </>
+          <header className="border-b border-gray-lightest bg-white">
+            <FileHeader id={fileId} />
+          </header>
         ) : null}
       </div>
       {fileId ? (
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        children
       ) : (
         <main className="flex min-h-0 w-full flex-1 flex-col">{children}</main>
       )}
@@ -52,45 +44,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function FileHeader({ id }: { id: string }) {
+  const pathname = usePathname();
   const { application } = useApplication(id);
+  const basePath = pathname.startsWith("/senior-queue")
+    ? `/senior-queue/${id}`
+    : `/applications/${id}`;
 
   if (!application) {
     return (
-      <div className="px-xl py-md">
+      <div className="px-xl py-lg">
         <span className="text-sm text-gray-medium">Loading file…</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-[12px] border-b border-gray-lightest bg-white py-sm">
-      <div className="flex items-center justify-between gap-md px-sm pt-[12px]">
-        <div className="flex min-w-0 items-center gap-[12px]">
-          <Link href="/queue" aria-label="Back to queue" className="inline-flex size-6 items-center justify-center text-primary hover:text-primary-hover">
-            <BackIcon />
+    <div className="flex items-center justify-between gap-md px-xl py-lg">
+      <div className="flex min-w-0 items-center gap-[12px]">
+        <Link href="/queue" aria-label="Back to queue" className="inline-flex size-6 items-center justify-center text-gray-dark hover:text-primary">
+          <BackIcon />
+        </Link>
+        <div className="flex min-w-0 flex-col gap-xs">
+          <Link href={`${basePath}/opportunity`} className="text-sm text-gray-dark hover:text-primary">
+            Opportunity
           </Link>
-          <span className="text-2xl font-semibold text-black">{application.id}</span>
-          <span className="inline-flex h-9 items-center rounded-[2px] bg-gray-lightest px-[12px] text-xs font-semibold text-charcoal">
-            {loanTypeFullLabel(application)}
-          </span>
-        </div>
-        <div className="flex items-center gap-md">
-          <OpenWorkbookButton id={id} />
-          <FileNotesButton id={id} />
+          <p className="truncate text-lg font-semibold text-black">
+            {application.borrower.fullName} - {application.id}
+          </p>
         </div>
       </div>
-      <div className="flex flex-wrap gap-xl px-md text-sm">
-        <p className="flex gap-sm px-xs py-[12px]">
-          <span className="text-gray-dark">Borrower:</span>
-          <span className="font-semibold text-black">{application.borrower.fullName}</span>
-        </p>
-        <p className="flex gap-sm px-xs py-[12px]">
-          <span className="text-gray-dark">Co-Signer:</span>
-          <span className={application.cosigner ? "font-semibold text-black" : "text-gray-medium"}>
-            {application.cosigner?.fullName ?? "N/A"}
-          </span>
-        </p>
-      </div>
+      <FileActions id={id} />
     </div>
   );
 }

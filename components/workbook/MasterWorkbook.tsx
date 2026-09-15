@@ -38,7 +38,7 @@ export function MasterWorkbook({ id }: { id: string }) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#f3f3f3]">
+    <div className="flex min-h-0 flex-1 flex-col bg-gray-lightest">
       <div className="flex flex-wrap items-center justify-between gap-md border-b border-gray-light bg-white px-xl py-sm">
         <div>
           <p className="text-sm font-semibold text-black">
@@ -75,7 +75,7 @@ export function MasterWorkbook({ id }: { id: string }) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto p-md">
-        <table className="min-w-full border-collapse bg-white text-sm shadow-[0_1px_0_rgba(29,41,61,0.06)]">
+        <table className="min-w-full border-collapse bg-white text-sm">
           <thead>
             <tr>
               <th className="w-10 border border-gray-light bg-gray-extra-light px-xs py-xs text-xs font-semibold text-gray-medium" />

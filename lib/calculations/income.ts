@@ -1,10 +1,65 @@
-import type { IncomeFrequency, IncomeWorksheet } from "../types";
+import type { IncomeCalculator, IncomeFrequency, IncomeWorksheet } from "../types";
+
+export function emptyCalculator(): IncomeCalculator {
+  return {
+    annual: 0,
+    monthly: 0,
+    semiMonthly: 0,
+    biweekly: 0,
+    weekly: 0,
+    hourlyRate: 0,
+    hourlyHours: 0,
+    ytdGross: 0,
+    ytdPeriods: 0,
+    ytdAnnualPeriods: 0,
+    yearCurrent: 0,
+    yearPrior: 0,
+  };
+}
+
+export function seedCalculator(
+  income: Omit<IncomeWorksheet, "calculator"> & { calculator?: IncomeCalculator },
+): IncomeCalculator {
+  const next = emptyCalculator();
+  switch (income.selectedFrequency) {
+    case "annual":
+      next.annual = income.grossPay;
+      break;
+    case "monthly":
+      next.monthly = income.grossPay;
+      break;
+    case "semi-monthly":
+      next.semiMonthly = income.grossPay;
+      break;
+    case "biweekly":
+      next.biweekly = income.grossPay;
+      break;
+    case "weekly":
+      next.weekly = income.grossPay;
+      break;
+    case "hourly":
+      next.hourlyRate = income.grossPay;
+      next.hourlyHours = income.hours || 0;
+      break;
+    case "ytd":
+      next.ytdGross = income.grossPay;
+      next.ytdPeriods = income.payPeriods || 0;
+      break;
+  }
+  next.yearPrior = income.priorYearIncome || 0;
+  return next;
+}
+
+export function hydrateCalculator(income: IncomeWorksheet): IncomeCalculator {
+  return income.calculator ?? seedCalculator(income);
+}
 
 export function monthlyFromFrequency(
   frequency: IncomeFrequency,
   grossPay: number,
   hours = 0,
   payPeriods = 0,
+  annualPeriods = 26,
 ): number {
   if (!grossPay) return 0;
 
@@ -22,8 +77,8 @@ export function monthlyFromFrequency(
     case "hourly":
       return (grossPay * hours * 52) / 12;
     case "ytd":
-      if (!payPeriods) return 0;
-      return ((grossPay / payPeriods) * 26) / 12;
+      if (!payPeriods || !annualPeriods) return 0;
+      return ((grossPay / payPeriods) * annualPeriods) / 12;
     default:
       return 0;
   }
@@ -40,6 +95,7 @@ export function monthlyIncome(income: IncomeWorksheet): {
     income.grossPay,
     income.hours,
     income.payPeriods,
+    income.calculator?.ytdAnnualPeriods || 26,
   );
   const variable = income.variablePayPeriods
     ? income.variableYtd / income.variablePayPeriods

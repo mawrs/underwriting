@@ -1,77 +1,98 @@
 "use client";
 
+import { useState } from "react";
 import { useFileWorkspace } from "@/components/application/file-context";
 import { StageIntro } from "@/components/application/StageIntro";
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
-import { FlagList } from "@/components/shared/FlagLine";
+import { documentViewHref } from "@/lib/documents";
 import { useApplication } from "@/lib/store";
-import { stepFlags } from "@/lib/workflow";
 
 export function DocumentsPage() {
   const { id, readOnly } = useFileWorkspace();
   const { application, updateApplication } = useApplication(id);
+  const [selected, setSelected] = useState<string[]>([]);
   if (!application) return null;
+
+  const docs = application.documents;
+  const selectedDocs = docs.filter((doc) => selected.includes(doc.id));
+
+  function setDocuments(next: typeof docs) {
+    updateApplication(id, { documents: next });
+  }
+
+  function deleteSelected() {
+    setDocuments(docs.filter((doc) => !selected.includes(doc.id)));
+    setSelected([]);
+  }
+
+  function markIncomplete() {
+    const now = new Date().toISOString();
+    setDocuments(
+      docs.map((doc) =>
+        selected.includes(doc.id)
+          ? { ...doc, reviewStatus: "incomplete" as const, reviewedAt: now }
+          : doc,
+      ),
+    );
+  }
+
+  function openSelected() {
+    for (const doc of selectedDocs) {
+      const link = document.createElement("a");
+      link.href = documentViewHref(id, doc.id);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.append(link);
+      link.click();
+      link.remove();
+    }
+  }
 
   return (
     <StageIntro
       title="Documents"
-      lede="Cross-check uploads. Status changes stay on the file and do not send a customer letter."
+      action={
+        selectedDocs.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-end gap-md">
+            <p className="text-sm text-gray-dark">
+              {selectedDocs.length} document(s) selected
+            </p>
+            <div className="flex items-center gap-xs">
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={deleteSelected}
+                className="rounded-xs border border-gray-dark px-[17px] py-[5px] text-sm text-gray-dark hover:bg-gray-lightest disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={markIncomplete}
+                className="rounded-xs border border-gray-dark px-[17px] py-[5px] text-sm text-gray-dark hover:bg-gray-lightest disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Mark as Incomplete
+              </button>
+              <button
+                type="button"
+                onClick={openSelected}
+                className="rounded-xs bg-primary px-[17px] py-[5px] text-sm text-white hover:bg-primary-hover"
+              >
+                Open Documents
+              </button>
+            </div>
+          </div>
+        ) : null
+      }
     >
-      <div className="mb-md flex flex-wrap gap-sm">
-        <button type="button" className="uw-btn-primary" disabled>
-          Upload Files
-        </button>
-        <button
-          type="button"
-          className="uw-btn-primary"
-          disabled={readOnly}
-          onClick={() =>
-            updateApplication(id, {
-              documents: application.documents.map((doc) =>
-                doc.reviewStatus === "pending" ? { ...doc, reviewStatus: "approved" as const } : doc,
-              ),
-            })
-          }
-        >
-          Approve pending
-        </button>
-        <button
-          type="button"
-          className="uw-btn-primary"
-          disabled={readOnly}
-          onClick={() =>
-            updateApplication(id, {
-              documents: application.documents.map((doc) =>
-                doc.reviewStatus === "pending" ? { ...doc, reviewStatus: "rejected" as const } : doc,
-              ),
-            })
-          }
-        >
-          Reject pending
-        </button>
-        <button
-          type="button"
-          className="uw-btn-primary"
-          disabled={readOnly}
-          onClick={() =>
-            updateApplication(id, {
-              documents: application.documents.map((doc) =>
-                doc.reviewStatus === "pending"
-                  ? { ...doc, reviewStatus: "incomplete" as const }
-                  : doc,
-              ),
-            })
-          }
-        >
-          Mark pending incomplete
-        </button>
-      </div>
       <DocumentsTable
         application={application}
+        selected={selected}
+        onSelectedChange={setSelected}
         readOnly={readOnly}
-        onChange={(documents) => updateApplication(id, { documents })}
+        onChange={setDocuments}
       />
-      <FlagList flags={stepFlags(application, "documents")} />
     </StageIntro>
   );
 }

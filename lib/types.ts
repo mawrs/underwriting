@@ -16,7 +16,8 @@ export type DocumentKind =
   | "credit-score-exception"
   | "mla"
   | "degree"
-  | "pay-stub";
+  | "pay-stub"
+  | "application-disclosure";
 
 export type DocumentStatus =
   | "pending"
@@ -26,7 +27,7 @@ export type DocumentStatus =
   | "incomplete";
 
 export type PayoffType = "full" | "partial";
-export type AccountType = "I" | "R";
+export type AccountType = "I" | "R" | "C" | "M";
 
 export type IncomeFrequency =
   | "annual"
@@ -50,6 +51,14 @@ export interface Person {
   email: string;
   zip: string;
   state: string;
+  street: string;
+  city: string;
+  phone: string;
+  ssnLast4: string;
+  citizenship: string;
+  graduationYear: string;
+  relationship: string;
+  livingArrangement: string;
   filingStatus: string;
   birthDate: string;
   creditScore: number;
@@ -79,6 +88,7 @@ export interface UploadedDocument {
   reviewStatus: DocumentStatus;
   reviewedAt: string | null;
   note: string;
+  internal: boolean;
 }
 
 export interface Liability {
@@ -103,6 +113,21 @@ export interface Liability {
   selectedAddress: string;
 }
 
+export interface IncomeCalculator {
+  annual: number;
+  monthly: number;
+  semiMonthly: number;
+  biweekly: number;
+  weekly: number;
+  hourlyRate: number;
+  hourlyHours: number;
+  ytdGross: number;
+  ytdPeriods: number;
+  ytdAnnualPeriods: number;
+  yearCurrent: number;
+  yearPrior: number;
+}
+
 export interface IncomeWorksheet {
   selectedFrequency: IncomeFrequency;
   grossPay: number;
@@ -113,6 +138,7 @@ export interface IncomeWorksheet {
   priorYearIncome: number;
   housingPayment: number;
   estimatedNewPayment: number;
+  calculator?: IncomeCalculator;
 }
 
 export interface DebtTrade {
@@ -125,6 +151,11 @@ export interface DebtTrade {
   highCredit: number;
   balance: number;
   payment: number;
+  sysPayment: number;
+  adjPayment: number;
+  originalBalance: number;
+  reportedAt: string;
+  ecoa: string;
   includeInDti: boolean;
 }
 
@@ -159,11 +190,19 @@ export interface PrimarySnapshot {
   submittedBy: string;
   documents: UploadedDocument[];
   liabilities: Liability[];
+  payoffs: Liability[];
   income: IncomeWorksheet;
   debtTrades: DebtTrade[];
   notes: Notes;
   decision: Decision;
   calculations: CalculationResult;
+}
+
+export interface UnderwritingExtras {
+  borrowerStatus: string;
+  supervisorApproval: boolean;
+  mlaEligible: "yes" | "no";
+  primaryHousingTradeId: string;
 }
 
 export interface Application {
@@ -187,6 +226,7 @@ export interface Application {
   employment: Employment[];
   documents: UploadedDocument[];
   liabilities: Liability[];
+  payoffs: Liability[];
   income: IncomeWorksheet;
   debtTrades: DebtTrade[];
   notes: Notes;
@@ -202,13 +242,36 @@ export interface Application {
   workbookFileName: string | null;
   workbookUploadedAt: string | null;
   workbookCopy: Record<string, string> | null;
+  opportunity: OpportunityFields;
+  underwriting: UnderwritingExtras;
 }
+
+export type OpportunityField =
+  | "opportunityName"
+  | "loanStatus"
+  | "stage"
+  | "accountName"
+  | "leadSource"
+  | "recordType"
+  | "preReviewPriority"
+  | "parentLoan"
+  | "owner"
+  | "cosignerDeadline"
+  | "closeDate"
+  | "loanStatusDate"
+  | "probability"
+  | "lastReferralPartner"
+  | "referralPartner"
+  | "duplicateApplication";
+
+export type OpportunityFields = Partial<Record<OpportunityField, string>>;
 
 export type ApplicationPatch = Partial<
   Pick<
     Application,
     | "documents"
     | "liabilities"
+    | "payoffs"
     | "income"
     | "debtTrades"
     | "notes"
@@ -217,10 +280,22 @@ export type ApplicationPatch = Partial<
     | "seniorDecision"
     | "status"
     | "borrower"
+    | "cosigner"
+    | "employment"
+    | "amount"
     | "workbookFileName"
     | "workbookUploadedAt"
     | "workbookCopy"
     | "requestedTerm"
     | "requestedRateType"
+    | "opportunityName"
+    | "stage"
+    | "owner"
+    | "underwriter"
+    | "referrer"
+    | "difficulty"
+    | "recordType"
+    | "opportunity"
+    | "underwriting"
   >
 >;

@@ -4,6 +4,8 @@ import type { Application } from "./types";
 import { submissionChecklist } from "./validation";
 
 export const WORKFLOW_STEPS = [
+  { slug: "opportunity", label: "Opportunity" },
+  { slug: "notes", label: "Notes" },
   { slug: "payoffs", label: "Student Loan Liabilities" },
   { slug: "loan-payoff", label: "Loan Payoff" },
   { slug: "review", label: "Review Application" },
@@ -12,6 +14,16 @@ export const WORKFLOW_STEPS = [
   { slug: "dti", label: "Credit Report Liabilities" },
   { slug: "rates", label: "Rates" },
   { slug: "submit", label: "Completion" },
+] as const;
+
+export const FILE_TABS = [
+  { slug: "payoffs", label: "Student Loan Liabilities" },
+  { slug: "loan-payoff", label: "Loan Payoff" },
+  { slug: "review", label: "Review Application" },
+  { slug: "documents", label: "Documents" },
+  { slug: "underwriting", label: "Underwriting" },
+  { slug: "dti", label: "Credit Report Liabilities" },
+  { slug: "rates", label: "Rates" },
 ] as const;
 
 export type WorkflowSlug = (typeof WORKFLOW_STEPS)[number]["slug"];
@@ -29,7 +41,7 @@ export function isWorkflowSlug(value: string): value is WorkflowSlug {
 
 export function workflowSlugFromPath(pathname: string): WorkflowSlug {
   const slug = pathname.split("/").filter(Boolean).at(-1) ?? "";
-  return isWorkflowSlug(slug) ? slug : "documents";
+  return isWorkflowSlug(slug) ? slug : "payoffs";
 }
 
 export function stepIndex(slug: WorkflowSlug): number {
@@ -43,6 +55,10 @@ export function stepDone(application: Application, slug: WorkflowSlug): boolean 
   const calc = calculate(application);
 
   switch (slug) {
+    case "opportunity":
+      return Boolean(application.opportunityName);
+    case "notes":
+      return Boolean(items["notes-income"] && items["notes-credit"] && items["notes-degree"]);
     case "payoffs":
     case "loan-payoff":
       return Boolean(items.payoffs);

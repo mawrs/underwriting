@@ -7,13 +7,25 @@ export function ListPagination({ count }: { count: number }) {
         1 - {count} of {count} items
       </p>
       <div className="flex items-center gap-sm">
-        <span className="inline-flex h-[38px] w-14 items-center justify-center rounded-xs border border-gray-light bg-white text-gray-medium">
+        <span className="inline-flex h-[38px] w-14 items-center justify-center rounded-xs border border-gray-light bg-white text-gray-dark">
           <ChevronsLeft />
         </span>
         <span className="inline-flex h-[38px] items-center justify-center rounded-xs bg-primary px-[21px] text-sm font-semibold text-white">
           1
         </span>
-        <span className="inline-flex h-[38px] w-14 items-center justify-center rounded-xs border border-gray-light bg-white text-gray-medium">
+        <span className="inline-flex h-[38px] w-[50px] items-center justify-center rounded-xs border border-gray-light bg-white text-sm text-gray-dark">
+          2
+        </span>
+        <span className="inline-flex h-[38px] w-[50px] items-center justify-center rounded-xs border border-gray-light bg-white text-sm text-gray-dark">
+          3
+        </span>
+        <span className="inline-flex h-[38px] w-[50px] items-center justify-center rounded-xs border border-gray-light bg-white text-sm text-gray-dark">
+          4
+        </span>
+        <span className="inline-flex h-[38px] w-[50px] items-center justify-center rounded-xs border border-gray-light bg-white text-sm text-gray-dark">
+          5
+        </span>
+        <span className="inline-flex h-[38px] w-14 items-center justify-center rounded-xs border border-gray-light bg-white text-gray-dark">
           <ChevronsRight />
         </span>
       </div>
