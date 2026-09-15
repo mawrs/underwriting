@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Button, buttonClass } from "@/components/ui/Button";
-import { documentViewHref } from "@/lib/documents";
+import { sampleDocumentHref } from "@/lib/documents";
 import { exportLiabilities } from "@/lib/export/xlsx";
 import { money } from "@/lib/format";
 import type { Application, ApplicationPatch, DebtTrade } from "@/lib/types";
@@ -31,7 +31,7 @@ export function UnderwritingLiabilities({
   );
   const creditDoc = application.documents.find((item) => item.kind === "credit-report");
   const reportHref = creditDoc
-    ? documentViewHref(application.id, creditDoc.id)
+    ? sampleDocumentHref(creditDoc.fileName)
     : `${basePath ?? ""}/documents`;
 
   function patchTrade(id: string, next: Partial<DebtTrade>) {

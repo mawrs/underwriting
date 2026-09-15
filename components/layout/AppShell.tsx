@@ -44,11 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function FileHeader({ id }: { id: string }) {
-  const pathname = usePathname();
   const { application } = useApplication(id);
-  const basePath = pathname.startsWith("/senior-queue")
-    ? `/senior-queue/${id}`
-    : `/applications/${id}`;
 
   if (!application) {
     return (
@@ -60,19 +56,21 @@ function FileHeader({ id }: { id: string }) {
 
   return (
     <div className="flex items-center justify-between gap-md px-xl py-lg">
-      <div className="flex min-w-0 items-center gap-[12px]">
-        <Link href="/queue" aria-label="Back to queue" className="inline-flex size-6 items-center justify-center text-gray-dark hover:text-primary">
+      <Link
+        href="/queue"
+        aria-label="Back to queue"
+        className="group flex min-w-0 items-center gap-3 text-gray-dark hover:text-primary"
+      >
+        <span className="inline-flex size-6 items-center justify-center">
           <BackIcon />
-        </Link>
+        </span>
         <div className="flex min-w-0 flex-col gap-xs">
-          <Link href={`${basePath}/opportunity`} className="text-sm text-gray-dark hover:text-primary">
-            Opportunity
-          </Link>
-          <p className="truncate text-lg font-semibold text-black">
+          <span className="text-sm group-hover:text-primary">Opportunity</span>
+          <p className="truncate text-lg font-semibold text-black group-hover:text-primary">
             {application.borrower.fullName} - {application.id}
           </p>
         </div>
-      </div>
+      </Link>
       <FileActions id={id} />
     </div>
   );

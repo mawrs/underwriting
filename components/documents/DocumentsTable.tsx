@@ -1,7 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import { documentViewHref } from "@/lib/documents";
+import { sampleDocumentHref } from "@/lib/documents";
 import { estDateTime, titleCase } from "@/lib/format";
 import type { Application, DocumentStatus, UploadedDocument } from "@/lib/types";
 
@@ -109,7 +109,7 @@ export function DocumentsTable({
                 <td className="uw-list-td whitespace-normal">
                   <span>
                     <a
-                      href={documentViewHref(application.id, doc.id)}
+                      href={sampleDocumentHref(doc.fileName)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-primary underline"

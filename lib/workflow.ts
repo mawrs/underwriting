@@ -17,6 +17,7 @@ export const WORKFLOW_STEPS = [
 ] as const;
 
 export const FILE_TABS = [
+  { slug: "opportunity", label: "Opportunity" },
   { slug: "payoffs", label: "Student Loan Liabilities" },
   { slug: "loan-payoff", label: "Loan Payoff" },
   { slug: "review", label: "Review Application" },

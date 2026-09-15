@@ -1,3 +1,3 @@
-export function documentViewHref(applicationId: string, documentId: string) {
-  return `/view/${applicationId}/${documentId}`;
+export function sampleDocumentHref(fileName: string) {
+  return `/documents/${encodeURIComponent(fileName)}?v=2`;
 }

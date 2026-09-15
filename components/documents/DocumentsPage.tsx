@@ -5,7 +5,7 @@ import { useFileWorkspace } from "@/components/application/file-context";
 import { StageIntro } from "@/components/application/StageIntro";
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
 import { Button } from "@/components/ui/Button";
-import { documentViewHref } from "@/lib/documents";
+import { sampleDocumentHref } from "@/lib/documents";
 import { useApplication } from "@/lib/store";
 
 export function DocumentsPage() {
@@ -40,7 +40,7 @@ export function DocumentsPage() {
   function openSelected() {
     for (const doc of selectedDocs) {
       const link = document.createElement("a");
-      link.href = documentViewHref(id, doc.id);
+      link.href = sampleDocumentHref(doc.fileName);
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       document.body.append(link);
