@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { documentViewHref } from "@/lib/documents";
 import { exportLiabilities } from "@/lib/export/xlsx";
 import { money } from "@/lib/format";
@@ -159,17 +160,10 @@ export function UnderwritingLiabilities({
       <div className="uw-card-header">
         <h1 className="text-lg text-black">Credit Report Liabilities</h1>
         <div className="flex shrink-0 items-center gap-sm">
-          <button
-            type="button"
-            onClick={() => exportLiabilities(application)}
-            className="rounded-xs border border-gray-dark px-[17px] py-[5px] text-sm text-gray-dark hover:bg-gray-lightest"
-          >
+          <Button variant="secondary" onClick={() => exportLiabilities(application)}>
             Export to Excel
-          </button>
-          <Link
-            href={reportHref}
-            className="rounded-xs bg-primary px-[17px] py-[5px] text-sm text-white hover:bg-primary-hover"
-          >
+          </Button>
+          <Link href={reportHref} className={buttonClass("primary")}>
             View Credit Report
           </Link>
         </div>

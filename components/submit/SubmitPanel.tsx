@@ -34,6 +34,7 @@ export function SubmitPanel({ application }: { application: Application }) {
       lede="Open the master workbook in a new window to cross-check the file, upload the completed copy, then send to second-level review."
     >
 
+      <div className="flex flex-col gap-md p-md">
       <WorkbookActions
         application={application}
         readOnly={locked}
@@ -185,6 +186,7 @@ export function SubmitPanel({ application }: { application: Application }) {
           </div>
         </section>
       )}
+      </div>
     </StageIntro>
   );
 }

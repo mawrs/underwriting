@@ -54,6 +54,7 @@ export interface Person {
   street: string;
   city: string;
   phone: string;
+  ssn: string;
   ssnLast4: string;
   citizenship: string;
   graduationYear: string;

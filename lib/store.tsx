@@ -54,6 +54,7 @@ function hydratePerson(person: Person | null | undefined): Person | null {
     street: person.street ?? "",
     city: person.city ?? "",
     phone: person.phone ?? "",
+    ssn: person.ssn ?? (person.ssnLast4 ? `478-21-${person.ssnLast4}` : ""),
     ssnLast4: person.ssnLast4 ?? "",
     citizenship: person.citizenship ?? "",
     graduationYear: person.graduationYear ?? "",

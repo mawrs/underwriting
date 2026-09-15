@@ -17,10 +17,8 @@ export function StageIntro({
         <h1 className="text-lg text-black">{title}</h1>
         {action}
       </div>
-      <div className="p-md">
-        {lede ? <p className="mb-md max-w-[62ch] text-sm text-gray-medium">{lede}</p> : null}
-        {children}
-      </div>
+      {lede ? <p className="max-w-[62ch] px-xl py-md text-sm text-gray-medium">{lede}</p> : null}
+      {children}
     </div>
   );
 }

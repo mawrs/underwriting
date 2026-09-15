@@ -70,7 +70,7 @@ export function DocumentsTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xs border border-gray-light">
+    <div className="overflow-x-auto">
       <table className="w-full min-w-[1400px] table-fixed text-left">
         <thead>
           <tr>

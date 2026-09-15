@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useApplication, useStore } from "@/lib/store";
 import { canSubmitToSenior } from "@/lib/validation";
+import { Button, buttonClass } from "@/components/ui/Button";
 
 export function FileActions({ id }: { id: string }) {
   const router = useRouter();
@@ -29,23 +30,18 @@ export function FileActions({ id }: { id: string }) {
 
   return (
     <div className="flex items-center gap-sm">
-      <Link
-        href={`${basePath}/review`}
-        className="rounded-xs border border-gray-dark px-[17px] py-[5px] text-sm text-gray-dark hover:bg-gray-lightest"
-      >
+      <Link href={`${basePath}/review`} className={buttonClass("secondary")}>
         New Review
       </Link>
       <div ref={root} className="relative">
-        <button
-          type="button"
+        <Button
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((next) => !next)}
-          className="inline-flex items-center gap-sm rounded-xs bg-primary px-[17px] py-[5px] text-sm text-white hover:bg-primary-hover"
         >
           {senior ? "Complete Review" : "Submit for Approval"}
           <ChevronDownIcon />
-        </button>
+        </Button>
         {open ? (
           <div
             role="menu"

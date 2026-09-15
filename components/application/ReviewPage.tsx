@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { useFileWorkspace } from "@/components/application/file-context";
+import { Button } from "@/components/ui/Button";
 import { money } from "@/lib/format";
 import { useApplication } from "@/lib/store";
 import type { Application, Person } from "@/lib/types";
@@ -33,6 +34,7 @@ function emptyPerson(): Person {
     street: "",
     city: "",
     phone: "",
+    ssn: "",
     ssnLast4: "",
     citizenship: "",
     graduationYear: "",
@@ -67,10 +69,30 @@ function degreeValue(person: Person) {
     .join("\n");
 }
 
-function ssnValue(last4: string) {
+function formatSsn(ssn: string) {
+  const digits = ssn.replace(/\D/g, "").slice(0, 9);
+  if (digits.length !== 9) return ssn.trim();
+  return `${digits.slice(0, 3)} - ${digits.slice(3, 5)} - ${digits.slice(5)}`;
+}
+
+function maskSsn(ssn: string) {
+  const last4 = ssn.replace(/\D/g, "").slice(-4);
   if (!last4) return "";
   return `*** - ** - ${last4}`;
 }
+
+function splitName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return { first: parts[0] ?? "", middle: "", last: "" };
+  if (parts.length === 2) return { first: parts[0], middle: "", last: parts[1] };
+  return {
+    first: parts[0],
+    middle: parts.slice(1, -1).join(" ").replace(/\.+$/, ""),
+    last: parts[parts.length - 1],
+  };
+}
+
+type EditorField = { label: string; value: string };
 
 type FieldId =
   | "amount"
@@ -100,26 +122,125 @@ export function ReviewPage() {
     borrower.livingArrangement ||
     (application.income.housingPayment > 0 ? "Renting" : "Owning");
   const job = application.employment[0];
+  const name = splitName(borrower.fullName);
+  const cosignerName = splitName(application.cosigner?.fullName ?? "");
 
-  const rows: { id: FieldId; label: string; value: string; multiline?: boolean }[] = [
-    { id: "amount", label: "Refinance Amount", value: money(application.amount) },
-    { id: "name", label: "Name", value: borrower.fullName },
-    { id: "birthDate", label: "Date of Birth", value: dateMdY(borrower.birthDate) },
-    { id: "phone", label: "Phone Number", value: borrower.phone },
-    { id: "address", label: "Permanent Address", value: addressValue(borrower), multiline: true },
-    { id: "livingArrangement", label: "Living Arrangement", value: living },
-    { id: "highestDegree", label: "Highest Degree", value: degreeValue(borrower), multiline: true },
-    { id: "ssn", label: "Social Security Number (SSN)", value: ssnValue(borrower.ssnLast4) },
-    { id: "citizenship", label: "Citizenship Status", value: borrower.citizenship },
-    { id: "income", label: "Estimated Annual Income", value: money(borrower.statedAnnualIncome) },
-    { id: "employmentStatus", label: "Employment Status", value: job?.status ?? "" },
-    { id: "hasCosigner", label: "Cosigner", value: application.cosigner ? "Yes" : "No" },
-    { id: "cosignerName", label: "Cosigner Name", value: application.cosigner?.fullName ?? "" },
-    { id: "cosignerEmail", label: "Cosigner Email", value: application.cosigner?.email ?? "" },
+  const rows: {
+    id: FieldId;
+    label: string;
+    value: string;
+    masked?: string;
+    fields: EditorField[];
+  }[] = [
+    {
+      id: "amount",
+      label: "Refinance Amount",
+      value: money(application.amount),
+      fields: [{ label: "Refinance Amount", value: money(application.amount) }],
+    },
+    {
+      id: "name",
+      label: "Name",
+      value: borrower.fullName,
+      fields: [
+        { label: "First Name", value: name.first },
+        { label: "Middle Initial (Optional)", value: name.middle },
+        { label: "Last Name", value: name.last },
+      ],
+    },
+    {
+      id: "birthDate",
+      label: "Date of Birth",
+      value: dateMdY(borrower.birthDate),
+      fields: [{ label: "Date of Birth", value: dateMdY(borrower.birthDate) }],
+    },
+    {
+      id: "phone",
+      label: "Phone Number",
+      value: borrower.phone,
+      fields: [{ label: "Phone Number", value: borrower.phone }],
+    },
+    {
+      id: "address",
+      label: "Permanent Address",
+      value: addressValue(borrower),
+      fields: [
+        { label: "Street", value: borrower.street },
+        { label: "City", value: borrower.city },
+        { label: "State", value: borrower.state },
+        { label: "ZIP", value: borrower.zip },
+      ],
+    },
+    {
+      id: "livingArrangement",
+      label: "Living Arrangement",
+      value: living,
+      fields: [{ label: "Living Arrangement", value: living }],
+    },
+    {
+      id: "highestDegree",
+      label: "Highest Degree",
+      value: degreeValue(borrower),
+      fields: [
+        { label: "Degree", value: borrower.degree },
+        { label: "School", value: borrower.school },
+        { label: "Graduation Year", value: borrower.graduationYear },
+      ],
+    },
+    {
+      id: "ssn",
+      label: "Social Security Number (SSN)",
+      value: formatSsn(borrower.ssn || borrower.ssnLast4),
+      masked: maskSsn(borrower.ssn || borrower.ssnLast4),
+      fields: [
+        { label: "Social Security Number (SSN)", value: formatSsn(borrower.ssn || borrower.ssnLast4) },
+      ],
+    },
+    {
+      id: "citizenship",
+      label: "Citizenship Status",
+      value: borrower.citizenship,
+      fields: [{ label: "Citizenship Status", value: borrower.citizenship }],
+    },
+    {
+      id: "income",
+      label: "Estimated Annual Income",
+      value: money(borrower.statedAnnualIncome),
+      fields: [{ label: "Estimated Annual Income", value: money(borrower.statedAnnualIncome) }],
+    },
+    {
+      id: "employmentStatus",
+      label: "Employment Status",
+      value: job?.status ?? "",
+      fields: [{ label: "Employment Status", value: job?.status ?? "" }],
+    },
+    {
+      id: "hasCosigner",
+      label: "Cosigner",
+      value: application.cosigner ? "Yes" : "No",
+      fields: [{ label: "Cosigner", value: application.cosigner ? "Yes" : "No" }],
+    },
+    {
+      id: "cosignerName",
+      label: "Cosigner Name",
+      value: application.cosigner?.fullName ?? "",
+      fields: [
+        { label: "First Name", value: cosignerName.first },
+        { label: "Middle Initial (Optional)", value: cosignerName.middle },
+        { label: "Last Name", value: cosignerName.last },
+      ],
+    },
+    {
+      id: "cosignerEmail",
+      label: "Cosigner Email",
+      value: application.cosigner?.email ?? "",
+      fields: [{ label: "Cosigner Email", value: application.cosigner?.email ?? "" }],
+    },
     {
       id: "cosignerRelationship",
       label: "Cosigner Relationship",
       value: application.cosigner?.relationship ?? "",
+      fields: [{ label: "Cosigner Relationship", value: application.cosigner?.relationship ?? "" }],
     },
   ];
 
@@ -132,13 +253,15 @@ export function ReviewPage() {
       <div className="uw-card-header">
         <h1 className="text-lg text-black">Review Application</h1>
       </div>
-      <div className="flex flex-col gap-[10px] p-lg">
+      <div className="flex flex-col">
         {rows.map((row, index) => (
           <ReviewRow
             key={row.id}
+            id={row.id}
             label={row.label}
             value={row.value}
-            multiline={row.multiline}
+            masked={row.masked}
+            fields={row.fields}
             last={index === rows.length - 1}
             readOnly={readOnly}
             onSave={(next) => save(row.id, next)}
@@ -149,123 +272,164 @@ export function ReviewPage() {
   );
 }
 
+function composeValue(id: FieldId, values: string[]) {
+  if (id === "name" || id === "cosignerName") {
+    return values.map((item) => item.trim()).filter(Boolean).join(" ");
+  }
+  if (id === "address") {
+    const [street = "", city = "", state = "", zip = ""] = values;
+    const cityLine = [city, [state, zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+    return [street.trim(), cityLine].filter(Boolean).join("\n");
+  }
+  if (id === "highestDegree") {
+    const [degree = "", school = "", year = ""] = values;
+    return [degree, school, year.trim() ? `Graduated ${year.trim()}` : ""]
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join("\n");
+  }
+  return values[0] ?? "";
+}
+
 function ReviewRow({
+  id,
   label,
   value,
-  multiline,
+  masked,
+  fields,
   last,
   readOnly,
   onSave,
 }: {
+  id: FieldId;
   label: string;
   value: string;
-  multiline?: boolean;
+  masked?: string;
+  fields: EditorField[];
   last: boolean;
   readOnly: boolean;
   onSave: (value: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value);
-  const input = useRef<HTMLInputElement>(null);
-  const area = useRef<HTMLTextAreaElement>(null);
-  const skipSave = useRef(false);
+  const [hovered, setHovered] = useState(false);
+  const [drafts, setDrafts] = useState(fields.map((field) => field.value));
 
   useEffect(() => {
-    if (!editing) setDraft(value);
-  }, [editing, value]);
+    if (!editing) setDrafts(fields.map((field) => field.value));
+  }, [editing, fields]);
 
-  useEffect(() => {
-    if (!editing) return;
-    const el = multiline ? area.current : input.current;
-    el?.focus();
-    el?.select();
-  }, [editing, multiline]);
-
-  function save() {
-    const next = (multiline ? area.current?.value : input.current?.value) ?? draft;
+  function cancel() {
+    setDrafts(fields.map((field) => field.value));
     setEditing(false);
-    onSave(next);
   }
 
+  function save() {
+    setEditing(false);
+    onSave(composeValue(id, drafts));
+  }
+
+  const columns =
+    drafts.length >= 4 ? "grid-cols-2" : drafts.length === 3 ? "grid-cols-3" : drafts.length === 2 ? "grid-cols-2" : "grid-cols-1";
+
   return (
-    <div className={last ? "" : "border-b border-gray-light pb-[10px]"}>
-      <div className="flex items-center gap-[10px]">
-        <div className="flex min-w-0 flex-1 flex-col gap-xs">
-          <p className="text-sm text-gray-dark">{label}</p>
-          {editing ? (
-            multiline ? (
-              <textarea
-                ref={area}
-                value={draft}
-                rows={3}
-                aria-label={label}
-                onChange={(event) => setDraft(event.target.value)}
-                onBlur={() => {
-                  if (skipSave.current) {
-                    skipSave.current = false;
-                    return;
-                  }
-                  save();
-                }}
+    <div
+      className={`group flex items-start gap-[10px] p-lg hover:bg-gray-lightest ${
+        last ? "" : "border-b border-gray-light"
+      }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-xs">
+        <p className="text-sm text-gray-dark">{label}</p>
+        <p className="whitespace-pre-line text-base font-normal text-black">
+          {masked && !editing ? (
+            <>
+              <span className={hovered ? "hidden" : ""}>{masked}</span>
+              <span className={hovered ? "" : "hidden"}>{value || "—"}</span>
+            </>
+          ) : (
+            value || "—"
+          )}
+        </p>
+        {editing ? (
+          <div className={`mt-sm grid gap-md ${columns}`}>
+            {fields.map((field, index) => (
+              <FloatInput
+                key={field.label}
+                label={field.label}
+                value={drafts[index] ?? ""}
+                autoFocus={index === 0}
+                onChange={(next) =>
+                  setDrafts((current) => current.map((item, itemIndex) => (itemIndex === index ? next : item)))
+                }
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {
                     event.preventDefault();
-                    skipSave.current = true;
-                    setDraft(value);
-                    setEditing(false);
+                    cancel();
                   }
-                }}
-                className="min-w-0 rounded-xs border border-primary bg-white px-xs py-px text-sm font-bold text-black outline-none"
-              />
-            ) : (
-              <input
-                ref={input}
-                value={draft}
-                aria-label={label}
-                onChange={(event) => setDraft(event.target.value)}
-                onBlur={() => {
-                  if (skipSave.current) {
-                    skipSave.current = false;
-                    return;
-                  }
-                  save();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    skipSave.current = true;
-                    setDraft(value);
-                    setEditing(false);
-                  }
-                  if (event.key === "Enter") {
+                  if (event.key === "Enter" && drafts.length === 1) {
                     event.preventDefault();
                     save();
                   }
                 }}
-                className="min-w-0 rounded-xs border border-primary bg-white px-xs py-px text-sm font-bold text-black outline-none"
               />
-            )
-          ) : (
-            <p className="whitespace-pre-line text-sm font-bold text-black">{value || "—"}</p>
-          )}
-        </div>
-        {readOnly ? null : (
-          <button
-            type="button"
-            onMouseDown={() => {
-              if (editing) skipSave.current = true;
-            }}
-            onClick={() => {
-              if (editing) save();
-              else setEditing(true);
-            }}
-            className="w-[68px] shrink-0 rounded-xs border border-primary px-[21px] py-[9px] text-sm font-semibold text-gray-dark hover:bg-primary-bg"
-          >
-            {editing ? "Save" : "Edit"}
-          </button>
-        )}
+            ))}
+          </div>
+        ) : null}
       </div>
+      {readOnly ? null : editing ? (
+        <div className="flex shrink-0 items-center gap-sm">
+          <Button variant="secondary" onClick={cancel}>
+            Cancel
+          </Button>
+          <Button onClick={save}>Save</Button>
+        </div>
+      ) : (
+        <Button
+          variant="secondary"
+          className={hovered ? "" : "invisible"}
+          onClick={() => setEditing(true)}
+        >
+          Edit
+        </Button>
+      )}
     </div>
+  );
+}
+
+function FloatInput({
+  label,
+  value,
+  autoFocus,
+  onChange,
+  onKeyDown,
+}: {
+  label: string;
+  value: string;
+  autoFocus?: boolean;
+  onChange: (value: string) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+}) {
+  const filled = value.trim().length > 0;
+  return (
+    <label className="relative min-w-0">
+      <input
+        aria-label={label}
+        value={value}
+        autoFocus={autoFocus}
+        placeholder={filled ? undefined : label}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={onKeyDown}
+        className={`h-[60px] w-full rounded-xs border border-gray-light bg-white text-base outline-none placeholder:text-gray-dark focus:border-primary ${
+          filled ? "px-md pt-[22px] pb-sm text-black" : "px-md text-gray-dark"
+        }`}
+      />
+      {filled ? (
+        <span className="pointer-events-none absolute top-[6px] left-[15px] text-[10px] leading-[1.4] text-gray-dark">
+          {label}
+        </span>
+      ) : null}
+    </label>
   );
 }
 
@@ -281,8 +445,8 @@ function patchForField(application: Application, field: FieldId, value: string) 
   if (field === "citizenship") return { borrower: { ...borrower, citizenship: next } };
   if (field === "income") return { borrower: { ...borrower, statedAnnualIncome: parseMoney(next) } };
   if (field === "ssn") {
-    const last4 = next.replace(/\D/g, "").slice(-4);
-    return { borrower: { ...borrower, ssnLast4: last4 } };
+    const digits = next.replace(/\D/g, "").slice(0, 9);
+    return { borrower: { ...borrower, ssn: formatSsn(digits) || next, ssnLast4: digits.slice(-4) } };
   }
   if (field === "address") {
     const [street = "", cityLine = ""] = value.split("\n").map((line) => line.trim());

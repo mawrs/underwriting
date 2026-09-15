@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFileWorkspace } from "@/components/application/file-context";
 import { StageIntro } from "@/components/application/StageIntro";
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
+import { Button } from "@/components/ui/Button";
 import { documentViewHref } from "@/lib/documents";
 import { useApplication } from "@/lib/store";
 
@@ -58,29 +59,13 @@ export function DocumentsPage() {
               {selectedDocs.length} document(s) selected
             </p>
             <div className="flex items-center gap-xs">
-              <button
-                type="button"
-                disabled={readOnly}
-                onClick={deleteSelected}
-                className="rounded-xs border border-gray-dark px-[17px] py-[5px] text-sm text-gray-dark hover:bg-gray-lightest disabled:cursor-not-allowed disabled:opacity-50"
-              >
+              <Button variant="secondary" disabled={readOnly} onClick={deleteSelected}>
                 Delete
-              </button>
-              <button
-                type="button"
-                disabled={readOnly}
-                onClick={markIncomplete}
-                className="rounded-xs border border-gray-dark px-[17px] py-[5px] text-sm text-gray-dark hover:bg-gray-lightest disabled:cursor-not-allowed disabled:opacity-50"
-              >
+              </Button>
+              <Button variant="secondary" disabled={readOnly} onClick={markIncomplete}>
                 Mark as Incomplete
-              </button>
-              <button
-                type="button"
-                onClick={openSelected}
-                className="rounded-xs bg-primary px-[17px] py-[5px] text-sm text-white hover:bg-primary-hover"
-              >
-                Open Documents
-              </button>
+              </Button>
+              <Button onClick={openSelected}>Open Documents</Button>
             </div>
           </div>
         ) : null
