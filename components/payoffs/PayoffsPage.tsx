@@ -5,7 +5,7 @@ import { useFileWorkspace } from "@/components/application/file-context";
 import { LOAN_ROW_GRID, LoanCard } from "@/components/payoffs/LoanCard";
 import { selectedPayoffTotal } from "@/lib/calculations";
 import { money } from "@/lib/format";
-import { emptyPayoffLoan, emptyStudentLoan, isStudentLoan, normalizeLiability } from "@/lib/payoffs";
+import { emptyStudentLoan, isStudentLoan, normalizeLiability } from "@/lib/payoffs";
 import { useApplication } from "@/lib/store";
 import type { Liability } from "@/lib/types";
 
@@ -83,7 +83,7 @@ export function PayoffsPage({ mode = "all" }: { mode?: "all" | "payoff" }) {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-md">
+          <div className="flex flex-col gap-lg bg-gray-extra-light px-xl py-lg">
             {loans.map((item) => (
               <LoanCard
                 key={item.id}
@@ -93,16 +93,6 @@ export function PayoffsPage({ mode = "all" }: { mode?: "all" | "payoff" }) {
                 onChange={(patch) => update(item.id, patch)}
               />
             ))}
-            <PromptLine prompt="Not seeing your loan?" className="px-md">
-              <button
-                type="button"
-                disabled={readOnly}
-                className="uw-btn-link"
-                onClick={() => setLoans([...loans, emptyPayoffLoan()])}
-              >
-                Add another student loan
-              </button>
-            </PromptLine>
           </div>
         )}
       </div>

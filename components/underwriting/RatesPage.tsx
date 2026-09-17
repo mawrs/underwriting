@@ -19,6 +19,10 @@ export function RatesPage() {
       <section className="bg-white">
         <div className="uw-card-header">
           <h1 className="text-lg text-black">Rates</h1>
+          <p className="flex items-center gap-sm text-sm text-gray-dark">
+            <span className="size-[14px] rounded-xs bg-yellow" aria-hidden />
+            Color = selected
+          </p>
         </div>
         <RatesTable application={application} readOnly={readOnly} onSelect={select} />
       </section>

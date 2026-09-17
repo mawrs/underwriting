@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Select } from "@/components/ui/Dropdown";
+import { FloatInput } from "@/components/ui/FloatInput";
 import { calculate } from "@/lib/calculations";
 import { estDateTime } from "@/lib/format";
 import type { Application, ApplicationPatch } from "@/lib/types";
@@ -44,6 +45,8 @@ function docAt(application: Application, kind: Application["documents"][number][
   return application.documents.find((item) => item.kind === kind)?.uploadedAt ?? application.hardCreditDate;
 }
 
+const CARD = "flex flex-col gap-md rounded-sm border border-gray-light bg-white px-xl py-lg";
+
 export function BorrowerInformation({
   application,
   basePath,
@@ -82,44 +85,48 @@ export function BorrowerInformation({
   }
 
   return (
-    <div className="flex flex-col gap-2xl p-sm">
-      <section className="flex flex-col gap-md border-b border-gray-light pb-md">
+    <div className="flex flex-col gap-lg bg-[#eee] px-xl py-lg">
+      <section className={CARD}>
         <h2 className="text-base font-semibold text-black">Income Information</h2>
         <div className="grid grid-cols-4 gap-sm">
-          <FloatField label="Income (Monthly)" value={moneySpaced(calc.monthlyBaseIncome)} />
-          <FloatField label="Other Income (Monthly)" value={moneySpaced(calc.monthlyVariableIncome)} />
-          <FloatField label="Total Income (Monthly)" value={moneySpaced(calc.monthlyIncome)} computed />
-          <FloatField label="" value="" hidden />
+          <FloatInput label="Income (Monthly)" value={moneySpaced(calc.monthlyBaseIncome)} readOnly={readOnly} />
+          <FloatInput
+            label="Other Income (Monthly)"
+            value={moneySpaced(calc.monthlyVariableIncome)}
+            readOnly={readOnly}
+          />
+          <FloatInput label="Total Income (Monthly)" value={moneySpaced(calc.monthlyIncome)} readOnly />
+          <div />
         </div>
       </section>
 
-      <section className="flex flex-col gap-md border-b border-gray-light pb-md">
+      <section className={CARD}>
         <h2 className="text-base font-semibold text-black">Liabilities Information</h2>
         <div className="flex flex-col gap-xs">
           <div className="grid grid-cols-4 gap-sm">
-            <FloatField label="Liabilities (Monthly)" value={moneySpaced(calc.remainingMonthlyDebt)} />
-            <FloatField label="Liabilities (Monthly)" value={moneySpaced(0)} />
-            <FloatField
-              label="Housing Expense (Monthly)"
-              value={moneySpaced(calc.housingPayment)}
-              computed
+            <FloatInput
+              label="Liabilities (Monthly)"
+              value={moneySpaced(calc.remainingMonthlyDebt)}
+              readOnly={readOnly}
             />
-            <FloatField
+            <FloatInput label="Liabilities (Monthly)" value={moneySpaced(0)} readOnly={readOnly} />
+            <FloatInput label="Housing Expense (Monthly)" value={moneySpaced(calc.housingPayment)} readOnly />
+            <FloatInput
               label="Lowest Of Mortgage Lien And Housing Expense"
               value={moneySpaced(lowestMortgage)}
-              computed
+              readOnly
             />
           </div>
           <div className="grid grid-cols-4 gap-sm">
-            <FloatField label="FICO Score" value={String(application.borrower.fico || "—")} computed />
-            <FloatField label="Pre Tax" value={moneySpaced(preTax)} computed />
-            <FloatField label="Post Tax" value={moneySpaced(postTax)} computed />
-            <FloatField label="" value="" hidden computed />
+            <FloatInput label="FICO Score" value={String(application.borrower.fico || "—")} readOnly />
+            <FloatInput label="Pre Tax" value={moneySpaced(preTax)} readOnly />
+            <FloatInput label="Post Tax" value={moneySpaced(postTax)} readOnly />
+            <div />
           </div>
         </div>
       </section>
 
-      <section className="flex flex-col gap-md">
+      <section className={CARD}>
         <h2 className="text-base font-semibold text-black">Status Information</h2>
         <div className="overflow-hidden rounded-sm border border-gray-light">
           <table className="w-full text-left text-sm">
@@ -145,11 +152,11 @@ export function BorrowerInformation({
         </div>
       </section>
 
-      <section className="flex flex-col gap-md">
+      <section className={CARD}>
         <h2 className="text-base font-semibold text-black">Borrower MLA Eligibility Status</h2>
         <div className="overflow-hidden rounded-sm border border-gray-light">
           <table className="w-full text-left text-sm">
-            <thead>
+            <thead className="bg-gray-lightest">
               <tr>
                 <th className="border-b border-gray-light px-xl py-3 font-semibold text-black">
                   Date Sent (EST)
@@ -178,7 +185,7 @@ export function BorrowerInformation({
         </Link>
       </section>
 
-      <section className="flex flex-col gap-md">
+      <section className={CARD}>
         <FloatSelect
           label="Select Status"
           heading="Borrower Status"
@@ -284,35 +291,6 @@ export function BorrowerInformation({
   );
 }
 
-function FloatField({
-  label,
-  value,
-  computed = false,
-  hidden = false,
-}: {
-  label: string;
-  value: string;
-  computed?: boolean;
-  hidden?: boolean;
-}) {
-  return (
-    <div className={hidden ? "invisible min-w-0" : "min-w-0"}>
-      <div
-        className={`relative rounded-xs border border-gray-light px-md pt-[22px] pb-sm ${
-          computed ? "bg-gray-lightest" : "bg-white"
-        }`}
-      >
-        {label ? (
-          <span className="absolute top-[6px] left-[15px] text-[10px] leading-[1.4] text-gray-dark">
-            {label}
-          </span>
-        ) : null}
-        <p className="h-7 overflow-hidden text-base leading-[1.4] text-ellipsis text-black">{value}</p>
-      </div>
-    </div>
-  );
-}
-
 function FloatSelect({
   heading,
   label,
@@ -360,11 +338,11 @@ function VerificationBlock({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-md">
+    <section className={CARD}>
       <h2 className="text-base font-semibold text-black">{title}</h2>
       <div className="overflow-hidden rounded-sm border border-gray-light">
         <table className="w-full text-left text-sm">
-          <thead>
+          <thead className="bg-gray-lightest">
             <tr>
               <th className="border-b border-gray-light px-xl py-3 font-semibold text-black">
                 Date Sent (EST)

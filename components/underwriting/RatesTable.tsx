@@ -61,7 +61,6 @@ export function RatesTable({
           <RateRow
             label="Fixed"
             kind="Fixed"
-            boxed
             application={application}
             onSelect={select}
           />
@@ -83,13 +82,11 @@ export function RatesTable({
 function RateRow({
   label,
   kind,
-  boxed = false,
   application,
   onSelect,
 }: {
   label: string;
   kind: RateKind;
-  boxed?: boolean;
   application: Application;
   onSelect: (kind: RateKind, term: (typeof RATE_TERMS)[number]) => void;
 }) {
@@ -105,19 +102,11 @@ function RateRow({
             <td className="border-b border-gray-light px-xl py-md">
               {rateLabel === "-" ? (
                 "-"
-              ) : boxed ? (
-                <button
-                  type="button"
-                  onClick={() => onSelect(kind, term)}
-                  className="rounded-xs border border-gray-light bg-white px-[12px] py-xs text-base text-gray-dark"
-                >
-                  {rateLabel}
-                </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => onSelect(kind, term)}
-                  className="text-left text-sm text-gray-dark"
+                  className="rounded-xs bg-yellow px-[12px] py-xs text-base text-gray-dark"
                 >
                   {rateLabel}
                 </button>

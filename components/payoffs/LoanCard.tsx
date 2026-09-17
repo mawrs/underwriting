@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { FloatInput } from "@/components/ui/FloatInput";
 import { money } from "@/lib/format";
 import { normalizeLiability } from "@/lib/payoffs";
@@ -29,9 +29,20 @@ export function LoanCard({
     onChange({ selected: !loan.selected });
   }
 
+  function onCardClick(event: MouseEvent<HTMLElement>) {
+    if (readOnly) return;
+    if ((event.target as HTMLElement).closest("a, button, input, label, select, textarea")) return;
+    toggle();
+  }
+
   if (variant === "payoff") {
     return (
-      <article className="flex flex-col gap-md rounded-xs border border-gray-light bg-white px-xl py-lg">
+      <article
+        className={`flex flex-col gap-md rounded-sm border border-gray-light bg-white px-xl py-lg transition-colors duration-[180ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-gray-medium ${
+          readOnly ? "" : "cursor-pointer"
+        }`}
+        onClick={onCardClick}
+      >
         <div className="flex items-center justify-between gap-xl">
           <div className="flex min-w-0 items-center gap-lg">
             <SelectBox loan={loan} readOnly={readOnly} onToggle={toggle} />
@@ -138,39 +149,38 @@ function PayoffFields({
 
   return (
     <div className="flex flex-col gap-xl">
-      <div className="grid grid-cols-3 gap-md">
-        <FloatInput
-          label="Loan Identifier"
-          value={loan.adjLoanIdentifier}
-          readOnly={readOnly}
-          onChange={(value) => onChange({ adjLoanIdentifier: value })}
-        />
-        <FloatInput
-          label="Adj Creditor Name"
-          value={loan.adjCreditorName}
-          readOnly={readOnly}
-          onChange={(value) => onChange({ adjCreditorName: value })}
-        />
-        <FloatInput
-          label="Adj Account Number"
-          value={loan.adjAccountNumber}
-          readOnly={readOnly}
-          onChange={(value) => onChange({ adjAccountNumber: value })}
-        />
-      </div>
-
       <div className="flex flex-col gap-sm">
         <PayoffToggle
           value={loan.payoffType}
           readOnly={readOnly}
           onChange={(payoffType) => onChange({ payoffType })}
         />
-        <FloatInput
-          label="Adj Loan Balance"
-          value={loan.adjBalance ? String(loan.adjBalance) : ""}
-          readOnly={readOnly}
-          onChange={(value) => onChange({ adjBalance: Number(value) || 0 })}
-        />
+        <div className="grid grid-cols-4 gap-md">
+          <FloatInput
+            label="Adj Loan Balance"
+            value={loan.adjBalance ? String(loan.adjBalance) : ""}
+            readOnly={readOnly}
+            onChange={(value) => onChange({ adjBalance: Number(value) || 0 })}
+          />
+          <FloatInput
+            label="Loan Identifier"
+            value={loan.adjLoanIdentifier}
+            readOnly={readOnly}
+            onChange={(value) => onChange({ adjLoanIdentifier: value })}
+          />
+          <FloatInput
+            label="Adj Creditor Name"
+            value={loan.adjCreditorName}
+            readOnly={readOnly}
+            onChange={(value) => onChange({ adjCreditorName: value })}
+          />
+          <FloatInput
+            label="Adj Account Number"
+            value={loan.adjAccountNumber}
+            readOnly={readOnly}
+            onChange={(value) => onChange({ adjAccountNumber: value })}
+          />
+        </div>
       </div>
 
       <div>
@@ -239,8 +249,8 @@ function PayoffToggle({
         onClick={() => onChange("full")}
         className={
           value === "full"
-            ? "bg-primary px-md py-sm text-sm font-semibold text-white"
-            : "px-md py-sm text-sm text-gray-dark"
+            ? "bg-primary px-md py-xs text-xs font-semibold text-white"
+            : "px-md py-xs text-xs text-gray-dark"
         }
       >
         Full Payoff
@@ -251,8 +261,8 @@ function PayoffToggle({
         onClick={() => onChange("partial")}
         className={
           value === "partial"
-            ? "bg-primary px-md py-sm text-sm font-semibold text-white"
-            : "px-md py-sm text-sm text-gray-dark"
+            ? "bg-primary px-md py-xs text-xs font-semibold text-white"
+            : "px-md py-xs text-xs text-gray-dark"
         }
       >
         Partial Payoff
