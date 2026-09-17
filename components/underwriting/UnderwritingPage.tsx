@@ -72,7 +72,6 @@ export function UnderwritingPage() {
       {panel === "income" ? (
         <IncomeCalculatorPanel
           application={application}
-          readOnly={readOnly}
           onChange={(patch) => updateApplication(id, patch)}
         />
       ) : null}

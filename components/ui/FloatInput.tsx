@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import type { FocusEvent, KeyboardEvent } from "react";
 
 export function FloatInput({
   label,
@@ -9,6 +9,8 @@ export function FloatInput({
   readOnly,
   autoFocus,
   onKeyDown,
+  onFocus,
+  onBlur,
 }: {
   label: string;
   value: string;
@@ -16,7 +18,11 @@ export function FloatInput({
   readOnly?: boolean;
   autoFocus?: boolean;
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+  onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
 }) {
+  const filled = value.trim().length > 0;
+
   return (
     <label className="group relative min-w-0 w-full flex-1">
       <input
@@ -27,11 +33,19 @@ export function FloatInput({
         placeholder=" "
         onChange={(event) => onChange?.(event.target.value)}
         onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         className={`peer h-[60px] w-full rounded-xs border border-gray-light px-md pt-[22px] pb-sm text-base text-black outline-none placeholder:text-transparent focus:border-primary ${
           readOnly ? "bg-gray-lightest" : "bg-white"
         }`}
       />
-      <span className="pointer-events-none absolute top-[6px] left-[15px] origin-top-left translate-y-[12px] scale-100 text-base leading-[1.4] text-gray-dark transition-transform duration-[180ms] ease-[cubic-bezier(0.2,0,0,1)] group-focus-within:translate-y-0 group-focus-within:scale-[0.625] peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:scale-[0.625]">
+      <span
+        className={`pointer-events-none absolute left-[15px] whitespace-nowrap text-gray-dark transition-all duration-[180ms] ease-[cubic-bezier(0.2,0,0,1)] ${
+          filled
+            ? "top-[6px] text-[10px] leading-[1.4]"
+            : "top-[18px] text-base leading-[1.4] group-focus-within:top-[6px] group-focus-within:text-[10px]"
+        }`}
+      >
         {label}
       </span>
     </label>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Select } from "@/components/ui/Dropdown";
 import { FloatInput } from "@/components/ui/FloatInput";
 import { calculate } from "@/lib/calculations";
@@ -45,17 +45,16 @@ function docAt(application: Application, kind: Application["documents"][number][
   return application.documents.find((item) => item.kind === kind)?.uploadedAt ?? application.hardCreditDate;
 }
 
-const CARD = "flex flex-col gap-md rounded-sm border border-gray-light bg-white px-xl py-lg";
+const CARD = "flex flex-col gap-md rounded-xs border border-gray-light bg-white px-xl py-lg";
 
 export function BorrowerInformation({
   application,
   basePath,
-  readOnly,
   onChange,
 }: {
   application: Application;
   basePath: string;
-  readOnly: boolean;
+  readOnly?: boolean;
   onChange: (patch: ApplicationPatch) => void;
 }) {
   const calc = calculate(application);
@@ -72,6 +71,25 @@ export function BorrowerInformation({
     mortgagePayment > 0 && calc.housingPayment > 0
       ? Math.min(mortgagePayment, calc.housingPayment)
       : 0;
+  const [fields, setFields] = useState({
+    incomeMonthly: moneySpaced(calc.monthlyBaseIncome),
+    otherIncome: moneySpaced(calc.monthlyVariableIncome),
+    totalIncome: moneySpaced(calc.monthlyIncome),
+    liabilities: moneySpaced(calc.remainingMonthlyDebt),
+    otherLiabilities: moneySpaced(0),
+    housing: moneySpaced(calc.housingPayment),
+    lowestMortgage: moneySpaced(lowestMortgage),
+    fico: String(application.borrower.fico || ""),
+    preTax: moneySpaced(preTax),
+    postTax: moneySpaced(postTax),
+  });
+
+  function setField(key: keyof typeof fields, value: string) {
+    setFields((prev) => ({ ...prev, [key]: value }));
+    if (key === "fico") {
+      onChange({ borrower: { ...application.borrower, fico: Number(value.replace(/\D/g, "")) || 0 } });
+    }
+  }
 
   const statusRows = [
     { at: application.preReviewAt, status: extras.borrowerStatus },
@@ -85,17 +103,25 @@ export function BorrowerInformation({
   }
 
   return (
-    <div className="flex flex-col gap-lg bg-[#eee] px-xl py-lg">
+    <div className="flex flex-col gap-lg bg-white px-xl py-lg">
       <section className={CARD}>
         <h2 className="text-base font-semibold text-black">Income Information</h2>
         <div className="grid grid-cols-4 gap-sm">
-          <FloatInput label="Income (Monthly)" value={moneySpaced(calc.monthlyBaseIncome)} readOnly={readOnly} />
+          <FloatInput
+            label="Income (Monthly)"
+            value={fields.incomeMonthly}
+            onChange={(value) => setField("incomeMonthly", value)}
+          />
           <FloatInput
             label="Other Income (Monthly)"
-            value={moneySpaced(calc.monthlyVariableIncome)}
-            readOnly={readOnly}
+            value={fields.otherIncome}
+            onChange={(value) => setField("otherIncome", value)}
           />
-          <FloatInput label="Total Income (Monthly)" value={moneySpaced(calc.monthlyIncome)} readOnly />
+          <FloatInput
+            label="Total Income (Monthly)"
+            value={fields.totalIncome}
+            onChange={(value) => setField("totalIncome", value)}
+          />
           <div />
         </div>
       </section>
@@ -106,21 +132,41 @@ export function BorrowerInformation({
           <div className="grid grid-cols-4 gap-sm">
             <FloatInput
               label="Liabilities (Monthly)"
-              value={moneySpaced(calc.remainingMonthlyDebt)}
-              readOnly={readOnly}
+              value={fields.liabilities}
+              onChange={(value) => setField("liabilities", value)}
             />
-            <FloatInput label="Liabilities (Monthly)" value={moneySpaced(0)} readOnly={readOnly} />
-            <FloatInput label="Housing Expense (Monthly)" value={moneySpaced(calc.housingPayment)} readOnly />
+            <FloatInput
+              label="Liabilities (Monthly)"
+              value={fields.otherLiabilities}
+              onChange={(value) => setField("otherLiabilities", value)}
+            />
+            <FloatInput
+              label="Housing Expense (Monthly)"
+              value={fields.housing}
+              onChange={(value) => setField("housing", value)}
+            />
             <FloatInput
               label="Lowest Of Mortgage Lien And Housing Expense"
-              value={moneySpaced(lowestMortgage)}
-              readOnly
+              value={fields.lowestMortgage}
+              onChange={(value) => setField("lowestMortgage", value)}
             />
           </div>
           <div className="grid grid-cols-4 gap-sm">
-            <FloatInput label="FICO Score" value={String(application.borrower.fico || "—")} readOnly />
-            <FloatInput label="Pre Tax" value={moneySpaced(preTax)} readOnly />
-            <FloatInput label="Post Tax" value={moneySpaced(postTax)} readOnly />
+            <FloatInput
+              label="FICO Score"
+              value={fields.fico}
+              onChange={(value) => setField("fico", value)}
+            />
+            <FloatInput
+              label="Pre Tax"
+              value={fields.preTax}
+              onChange={(value) => setField("preTax", value)}
+            />
+            <FloatInput
+              label="Post Tax"
+              value={fields.postTax}
+              onChange={(value) => setField("postTax", value)}
+            />
             <div />
           </div>
         </div>
@@ -128,9 +174,9 @@ export function BorrowerInformation({
 
       <section className={CARD}>
         <h2 className="text-base font-semibold text-black">Status Information</h2>
-        <div className="overflow-hidden rounded-sm border border-gray-light">
+        <div className="overflow-hidden rounded-xs border border-gray-light">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-extra-light">
+            <thead className="bg-gray-lightest">
               <tr>
                 <th className="w-[250px] border-b border-gray-light px-xl py-3 font-semibold text-black">
                   Date (EST)
@@ -154,9 +200,9 @@ export function BorrowerInformation({
 
       <section className={CARD}>
         <h2 className="text-base font-semibold text-black">Borrower MLA Eligibility Status</h2>
-        <div className="overflow-hidden rounded-sm border border-gray-light">
+        <div className="overflow-hidden rounded-xs border border-gray-light">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-extra-light">
+            <thead className="bg-gray-lightest">
               <tr>
                 <th className="border-b border-gray-light px-xl py-3 font-semibold text-black">
                   Date Sent (EST)
@@ -191,7 +237,6 @@ export function BorrowerInformation({
           heading="Borrower Status"
           value={extras.borrowerStatus}
           options={BORROWER_STATUSES}
-          disabled={readOnly}
           onChange={(borrowerStatus) => patchExtras({ borrowerStatus })}
         />
         <FloatSelect
@@ -203,7 +248,6 @@ export function BorrowerInformation({
               ? UNDERWRITERS
               : [application.underwriter, ...UNDERWRITERS]
           }
-          disabled={readOnly}
           onChange={(underwriter) => onChange({ underwriter })}
         />
         <Link href={`${basePath}/documents`} className="uw-btn-link">
@@ -214,7 +258,6 @@ export function BorrowerInformation({
             <input
               type="checkbox"
               checked={extras.supervisorApproval}
-              disabled={readOnly}
               onChange={(event) => patchExtras({ supervisorApproval: event.target.checked })}
               className="size-7 rounded-xs border-gray-light text-primary accent-primary"
             />
@@ -227,7 +270,6 @@ export function BorrowerInformation({
                 type="radio"
                 name="mla-eligible"
                 checked={extras.mlaEligible === "yes"}
-                disabled={readOnly}
                 onChange={() => patchExtras({ mlaEligible: "yes" })}
                 className="size-6 accent-primary"
               />
@@ -238,7 +280,6 @@ export function BorrowerInformation({
                 type="radio"
                 name="mla-eligible"
                 checked={extras.mlaEligible === "no"}
-                disabled={readOnly}
                 onChange={() => patchExtras({ mlaEligible: "no" })}
                 className="size-6 accent-primary"
               />
@@ -247,7 +288,7 @@ export function BorrowerInformation({
           </div>
         </div>
         <div className="flex justify-end">
-        <button type="button" disabled={readOnly} className="uw-btn-primary w-fit px-[21px] py-[9px]">
+        <button type="button" className="uw-btn-primary w-fit px-[21px] py-[9px]">
           Fetch MLA for Borrower
         </button>
         </div>
@@ -260,7 +301,7 @@ export function BorrowerInformation({
         pdfLabel="View DIT PDF V1"
         href={`${basePath}/documents`}
       >
-        <button type="button" disabled={readOnly} className="uw-btn-primary w-fit px-[21px] py-[9px]">
+        <button type="button" className="uw-btn-primary w-fit px-[21px] py-[9px]">
           Verify ID
         </button>
       </VerificationBlock>
@@ -274,13 +315,13 @@ export function BorrowerInformation({
       >
         <div className="flex flex-wrap gap-xl">
           <span className="flex items-center gap-sm">
-            <button type="button" disabled={readOnly} className="uw-btn-primary w-fit px-[21px] py-[9px]">
+            <button type="button" className="uw-btn-primary w-fit px-[21px] py-[9px]">
               Verify CURRENT Employment
             </button>
             <InfoTip text="Confirms the borrower's current employer only." />
           </span>
           <span className="flex items-center gap-sm">
-            <button type="button" disabled={readOnly} className="uw-btn-primary w-fit px-[21px] py-[9px]">
+            <button type="button" className="uw-btn-primary w-fit px-[21px] py-[9px]">
               Verify FULL Employment
             </button>
             <InfoTip text="Confirms the borrower's full employment history." />
@@ -296,14 +337,12 @@ function FloatSelect({
   label,
   value,
   options,
-  disabled,
   onChange,
 }: {
   heading: string;
   label: string;
   value: string;
   options: string[];
-  disabled: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -314,7 +353,6 @@ function FloatSelect({
         label={label}
         value={value}
         options={options}
-        disabled={disabled}
         aria-label={heading}
         onChange={onChange}
       />
@@ -340,9 +378,9 @@ function VerificationBlock({
   return (
     <section className={CARD}>
       <h2 className="text-base font-semibold text-black">{title}</h2>
-      <div className="overflow-hidden rounded-sm border border-gray-light">
+      <div className="overflow-hidden rounded-xs border border-gray-light">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-extra-light">
+          <thead className="bg-gray-lightest">
             <tr>
               <th className="border-b border-gray-light px-xl py-3 font-semibold text-black">
                 Date Sent (EST)

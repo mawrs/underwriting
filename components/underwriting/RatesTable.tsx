@@ -11,15 +11,18 @@ import {
   RATE_TERMS,
   rateFor,
   type RateKind,
+  type RateProduct,
 } from "@/lib/calculations/rates";
 import type { Application } from "@/lib/types";
 
 export function RatesTable({
   application,
+  product = "immediate",
   onSelect,
   readOnly = false,
 }: {
   application: Application;
+  product?: RateProduct;
   onSelect?: (patch: {
     requestedTerm: number;
     requestedRateType: RateKind;
@@ -28,7 +31,7 @@ export function RatesTable({
   readOnly?: boolean;
 }) {
   function select(kind: RateKind, term: (typeof RATE_TERMS)[number]) {
-    const payment = paymentFor(application, kind, term);
+    const payment = paymentFor(application, kind, term, product);
     if (payment == null || readOnly || !onSelect) return;
     onSelect({
       requestedTerm: term,
@@ -40,17 +43,17 @@ export function RatesTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[1100px] table-fixed text-left text-sm text-gray-dark">
-        <thead>
+        <thead className="bg-gray-lightest">
           <tr>
-            <th className="border-b border-gray-light bg-gray-extra-light px-xl py-md font-normal">
+            <th className="h-11 border-b border-gray-light px-xl py-3 font-semibold whitespace-nowrap text-black">
               Rate Type
             </th>
             {RATE_TERMS.map((term) => (
               <Fragment key={term}>
-                <th className="border-b border-gray-light bg-gray-extra-light px-xl py-md font-normal">
+                <th className="h-11 border-b border-gray-light px-xl py-3 font-semibold whitespace-nowrap text-black">
                   {term}
                 </th>
-                <th className="border-b border-gray-light bg-gray-extra-light px-xl py-md font-normal">
+                <th className="h-11 border-b border-gray-light px-xl py-3 font-semibold whitespace-nowrap text-black">
                   P&I Pmt.
                 </th>
               </Fragment>
@@ -62,17 +65,29 @@ export function RatesTable({
             label="Fixed"
             kind="Fixed"
             application={application}
+            product={product}
             onSelect={select}
           />
-          <MetricRow label="DTI/Total Liabilities" kind="Fixed" application={application} />
+          <MetricRow
+            label="DTI/Total Liabilities"
+            kind="Fixed"
+            application={application}
+            product={product}
+          />
           <MarginRow />
           <RateRow
             label="VARIABLE"
             kind="Variable"
             application={application}
+            product={product}
             onSelect={select}
           />
-          <MetricRow label="DTI/Total Liabilities" kind="Variable" application={application} />
+          <MetricRow
+            label="DTI/Total Liabilities"
+            kind="Variable"
+            application={application}
+            product={product}
+          />
         </tbody>
       </table>
     </div>
@@ -83,11 +98,13 @@ function RateRow({
   label,
   kind,
   application,
+  product,
   onSelect,
 }: {
   label: string;
   kind: RateKind;
   application: Application;
+  product: RateProduct;
   onSelect: (kind: RateKind, term: (typeof RATE_TERMS)[number]) => void;
 }) {
   return (
@@ -95,7 +112,7 @@ function RateRow({
       <td className="border-b border-gray-light px-xl py-md">{label}</td>
       {RATE_TERMS.map((term) => {
         const rate = rateFor(kind, term);
-        const payment = paymentFor(application, kind, term);
+        const payment = paymentFor(application, kind, term, product);
         const rateLabel = formatGridRate(rate);
         return (
           <Fragment key={`${kind}-${term}`}>
@@ -126,16 +143,18 @@ function MetricRow({
   label,
   kind,
   application,
+  product,
 }: {
   label: string;
   kind: RateKind;
   application: Application;
+  product: RateProduct;
 }) {
   return (
     <tr>
       <td className="border-b border-gray-light px-xl py-md">{label}</td>
       {RATE_TERMS.map((term) => {
-        const payment = paymentFor(application, kind, term);
+        const payment = paymentFor(application, kind, term, product);
         const dti = dtiForPayment(application, payment);
         const liabilities = liabilitiesForPayment(application, payment);
         return (

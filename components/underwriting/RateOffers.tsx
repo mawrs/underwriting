@@ -2,127 +2,74 @@
 
 import { useState } from "react";
 import {
-  dtiForPayment,
   OFFER_TERMS,
-  offerApr,
-  offerPayment,
+  offerTotals,
+  paymentFor,
   type RateKind,
   type RateProduct,
+  type RateTerm,
 } from "@/lib/calculations/rates";
-import { money, percent } from "@/lib/format";
+import { money } from "@/lib/format";
 import type { Application } from "@/lib/types";
-
-type SelectRate = (patch: {
-  requestedTerm: number;
-  requestedRateType: RateKind;
-  income: Application["income"];
-}) => void;
-
-const PRODUCTS: { id: RateProduct; label: string }[] = [
-  { id: "immediate", label: "Immediate" },
-  { id: "fixed", label: "Fixed" },
-  { id: "interest-only", label: "Interest Only" },
-  { id: "deferred", label: "Deferred" },
-];
 
 export function RateOffers({
   application,
-  readOnly,
-  onSelect,
+  product,
 }: {
   application: Application;
-  readOnly: boolean;
-  onSelect: SelectRate;
+  product: RateProduct;
 }) {
-  const [product, setProduct] = useState<RateProduct>("immediate");
+  const twoCols = product !== "fixed";
 
   return (
     <section className="bg-white">
-      <nav
-        className="flex gap-md overflow-x-auto border-b border-gray-light bg-white px-sm pt-sm"
-        aria-label="Rate products"
-      >
-        {PRODUCTS.map((item) => {
-          const active = item.id === product;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              aria-current={active ? "page" : undefined}
-              onClick={() => setProduct(item.id)}
-              className={
-                active
-                  ? "-mb-px shrink-0 border-b-2 border-primary px-xs pb-[17px] pt-sm text-sm whitespace-nowrap text-primary"
-                  : "-mb-px shrink-0 border-b-2 border-transparent px-xs pb-md pt-sm text-sm whitespace-nowrap text-gray-medium hover:text-primary"
-              }
-            >
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="flex flex-col gap-xl p-md">
-        <OfferGroup
-          title="Fixed Rates"
+      <div className={`grid items-start ${twoCols ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
+        <DetailGroup
+          title="Fixed"
           kind="Fixed"
           product={product}
           application={application}
-          readOnly={readOnly}
-          onSelect={onSelect}
+          divided={twoCols}
         />
-        {product === "fixed" ? null : (
-          <OfferGroup
-            title="Variable Rates"
+        {twoCols ? (
+          <DetailGroup
+            title="Variable"
             kind="Variable"
             product={product}
             application={application}
-            readOnly={readOnly}
-            onSelect={onSelect}
           />
-        )}
+        ) : null}
       </div>
     </section>
   );
 }
 
-function OfferGroup({
+function DetailGroup({
   title,
   kind,
   product,
   application,
-  readOnly,
-  onSelect,
+  divided = false,
 }: {
   title: string;
   kind: RateKind;
   product: RateProduct;
   application: Application;
-  readOnly: boolean;
-  onSelect: SelectRate;
+  divided?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-sm">
-      <p className="text-base">
-        <span className="font-semibold text-black">{title} </span>
-        <span className="text-gray-dark">( See TERMS and CONDITIONS below )</span>
-      </p>
-      <div className="flex flex-col gap-xs">
-        <div className="grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-center bg-gray-extra-light text-sm font-semibold text-black">
-          <div className="h-11" />
-          <div className="h-11 px-xl py-sm">Term</div>
-          <div className="h-11 px-xl py-sm">Monthly Payment</div>
-          <div className="h-11 px-xl py-sm">Interest Rate/APR</div>
-          <div className="h-11" />
-        </div>
+    <div className={`min-w-0 ${divided ? "lg:border-r lg:border-gray-light" : ""}`}>
+      <div className="uw-card-header">
+        <h2 className="text-lg text-black">{title}</h2>
+      </div>
+      <div className="flex flex-col gap-sm p-md">
         {OFFER_TERMS.map((term) => (
-          <OfferRow
+          <DetailRow
             key={`${kind}-${term.months}`}
             kind={kind}
             term={term}
             product={product}
             application={application}
-            readOnly={readOnly}
-            onSelect={onSelect}
           />
         ))}
       </div>
@@ -130,133 +77,139 @@ function OfferGroup({
   );
 }
 
-function OfferRow({
+function DetailRow({
   kind,
   term,
   product,
   application,
-  readOnly,
-  onSelect,
 }: {
   kind: RateKind;
   term: (typeof OFFER_TERMS)[number];
   product: RateProduct;
   application: Application;
-  readOnly: boolean;
-  onSelect: SelectRate;
 }) {
-  const [open, setOpen] = useState(false);
-  const apr = offerApr(kind, term.months);
-  const payment = offerPayment(application, kind, term.months, product);
   const selected =
     application.requestedRateType === kind && application.requestedTerm === term.months;
-  const dti = dtiForPayment(application, payment);
-
-  function choose() {
-    if (readOnly || payment == null) return;
-    onSelect({
-      requestedTerm: term.months,
-      requestedRateType: kind,
-      income: { ...application.income, estimatedNewPayment: payment },
-    });
-  }
+  const [open, setOpen] = useState(false);
+  const fullPayment = paymentFor(application, kind, term.months as RateTerm, "immediate");
+  const currentPayment = paymentFor(application, kind, term.months as RateTerm, product);
+  const { total, interest } = offerTotals(fullPayment, term.months, application.amount);
+  const inSchool =
+    product === "deferred" ? 25 : product === "interest-only" ? currentPayment : fullPayment;
+  const afterSchool = fullPayment;
 
   return (
     <div
-      className={`overflow-hidden rounded-xs border ${
-        selected ? "border-success bg-success-bg" : "border-gray-light bg-white"
+      className={`flex flex-col gap-[10px] rounded-xs border bg-white px-md pt-md pb-sm ${
+        selected ? "border-success" : "border-gray-light"
       }`}
     >
-      <div className="grid min-h-[68px] grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-center py-sm">
-        <div className="flex items-center px-xl">
-          {selected ? <CheckCircle /> : <span className="size-7" />}
+      <div className="flex items-center gap-xl">
+        <div className="flex min-w-0 flex-1 flex-col gap-xs">
+          <p className="text-[15px] font-semibold text-black">{term.years} years</p>
+          <p className="text-[11px] leading-[13px] text-gray-dark">{term.months} monthly payments</p>
         </div>
-        <button
-          type="button"
-          disabled={readOnly}
-          onClick={choose}
-          className="col-span-3 grid grid-cols-3 items-center text-left disabled:cursor-default"
-        >
-          <span className="px-xl py-sm text-sm font-semibold text-black">{term.years} Years</span>
-          <span className="px-xl py-sm text-sm font-semibold text-black">
-            {payment == null ? "-" : money(payment)}
-          </span>
-          <span className="px-xl py-sm text-sm font-semibold text-black">
-            {apr == null ? "-" : percent(apr)}
-          </span>
-        </button>
-        <div className="px-xl py-sm">
-          <button
-            type="button"
-            onClick={() => setOpen((next) => !next)}
-            className="inline-flex items-center gap-[12px] text-sm text-primary"
-            aria-expanded={open}
-          >
-            View details
-            <ChevronIcon open={open} />
-          </button>
+        <div className="flex shrink-0 items-center gap-xl">
+          <Metric
+            label="Total Repayments"
+            value={total == null ? "—" : moneyWhole(total)}
+            hint={interest == null ? "" : `Includes ${moneyWhole(interest)} in interest`}
+          />
         </div>
       </div>
-      {open ? (
-        <div className="grid grid-cols-2 gap-md border-t border-gray-light px-xl py-md text-sm text-gray-dark sm:grid-cols-4">
-          <Detail label="Term" value={`${term.months} months`} />
-          <Detail label="Product" value={productLabel(product)} />
-          <Detail label="DTI" value={dti == null ? "-" : percent(dti)} />
-          <Detail label="Rate type" value={kind} />
-        </div>
-      ) : null}
+      <div className="flex flex-col gap-sm border-t border-gray-light py-xs">
+        <button
+          type="button"
+          onClick={() => setOpen((next) => !next)}
+          className="inline-flex items-center gap-sm self-start px-lg py-sm text-sm font-semibold text-primary"
+          aria-expanded={open}
+        >
+          {open ? "Hide payment details" : "See payment details"}
+          <ChevronIcon open={open} />
+        </button>
+        {open ? (
+          <div className="flex h-[88px] items-center gap-xl rounded-xs border border-gray-light bg-gray-lightest p-md">
+            <Detail
+              label="First payment while in school"
+              value={money(inSchool ?? 25)}
+              hint={`Starts ${monthYear(inSchoolStart(application))}`}
+            />
+            <Detail
+              label="First full payment after school"
+              value={afterSchool == null ? "—" : money(afterSchool)}
+              hint={monthYear(afterSchoolDate(application))}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
-    <div>
-      <p className="text-gray-medium">{label}</p>
-      <p className="text-charcoal">{value}</p>
+    <div className="flex flex-col items-end justify-center gap-xs text-right whitespace-nowrap">
+      <p className="text-[11px] leading-[13px] text-gray-dark">{label}</p>
+      <p className="text-[15px] font-semibold text-black">{value}</p>
+      {hint ? <p className="text-[11px] leading-[13px] text-gray-dark">{hint}</p> : null}
     </div>
   );
 }
 
-function productLabel(product: RateProduct) {
-  if (product === "interest-only") return "Interest Only";
-  if (product === "deferred") return "Deferred";
-  if (product === "fixed") return "Fixed";
-  return "Immediate";
-}
-
-function CheckCircle() {
+function Detail({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
-      <circle cx="14" cy="14" r="12" fill="#278a27" />
-      <path
-        d="M8.5 14.2l3.4 3.4 7.2-7.6"
-        stroke="white"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <div className="flex flex-col justify-center gap-xs whitespace-nowrap">
+      <p className="text-[11px] leading-[13px] text-gray-dark">{label}</p>
+      <p className="text-[15px] font-semibold text-black">{value}</p>
+      <p className="text-[11px] leading-[13px] text-gray-dark">{hint}</p>
+    </div>
   );
 }
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      width="28"
-      height="28"
-      viewBox="0 0 28 28"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
       fill="none"
       aria-hidden
       className={open ? "rotate-180" : ""}
     >
       <path
-        d="M8 11l6 6 6-6"
+        d="M4 6l4 4 4-4"
         stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
   );
+}
+
+function moneyWhole(value: number) {
+  return value.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
+}
+
+function inSchoolStart(application: Application) {
+  const date = new Date(application.applicationDate);
+  if (Number.isNaN(date.getTime())) return new Date();
+  date.setMonth(date.getMonth() + 1);
+  return date;
+}
+
+function afterSchoolDate(application: Application) {
+  const year = Number(application.borrower.graduationYear);
+  if (year > new Date().getFullYear()) return new Date(year, 4, 1);
+  const date = inSchoolStart(application);
+  date.setFullYear(date.getFullYear() + 6);
+  return date;
+}
+
+function monthYear(date: Date) {
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }

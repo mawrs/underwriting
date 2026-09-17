@@ -116,6 +116,8 @@ function loadApplications(): Application[] {
         ? { ...item.income, calculator: hydrateCalculator(item.income) }
         : item.income,
       debtTrades: hydrateTrades(item.debtTrades, item.id),
+      fileNotes: item.fileNotes ?? "",
+      fileNotesUpdatedAt: item.fileNotesUpdatedAt ?? null,
       payoffs: Array.isArray(item.payoffs)
         ? item.payoffs
         : clone(seedApplications.find((seed) => seed.id === item.id)?.payoffs ?? []),

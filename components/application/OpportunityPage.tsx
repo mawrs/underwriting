@@ -113,8 +113,8 @@ export function OpportunityPage() {
   ];
 
   return (
-    <div className="flex min-h-full flex-col md:flex-row">
-      <section className="min-w-0 flex-1">
+    <div className="flex min-h-full flex-col md:flex-row md:items-stretch">
+      <section className="flex min-w-0 flex-1 flex-col border-b border-gray-light">
         <PanelHeader>Opportunity Information</PanelHeader>
         <div className="p-lg">
           <div className="flex flex-wrap gap-3xl">
@@ -123,7 +123,7 @@ export function OpportunityPage() {
           </div>
         </div>
       </section>
-      <section className="w-full border-t border-gray-light md:w-[498px] md:shrink-0 md:border-t-0 md:border-l">
+      <section className="flex w-full flex-col border-t border-b border-gray-light md:w-[498px] md:shrink-0 md:border-t-0 md:border-l">
         <PanelHeader as="h2">Summary</PanelHeader>
         <SummaryList application={application} />
       </section>

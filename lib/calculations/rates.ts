@@ -55,9 +55,16 @@ export function offerApr(kind: RateKind, months: number) {
   return OFFER_APR[kind][months] ?? null;
 }
 
-export function paymentFor(application: Application, kind: RateKind, term: RateTerm) {
+export function paymentFor(
+  application: Application,
+  kind: RateKind,
+  term: RateTerm,
+  product: RateProduct = "immediate",
+) {
   const rate = rateFor(kind, term);
   if (rate == null) return null;
+  if (product === "deferred") return 0;
+  if (product === "interest-only") return round2((application.amount * rate) / 12);
   return round2(estimatedPayment(application.amount, term, rate));
 }
 
@@ -72,6 +79,13 @@ export function offerPayment(
   if (product === "deferred") return 0;
   if (product === "interest-only") return round2((application.amount * apr) / 12);
   return round2(estimatedPayment(application.amount, months, apr));
+}
+
+export function offerTotals(payment: number | null, months: number, principal: number) {
+  if (payment == null) return { total: null, interest: null };
+  const total = Math.round(payment * months);
+  const interest = Math.max(0, total - Math.round(principal));
+  return { total, interest };
 }
 
 export function remainingDebt(application: Application) {

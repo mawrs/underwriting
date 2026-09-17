@@ -232,6 +232,8 @@ export interface Application {
   income: IncomeWorksheet;
   debtTrades: DebtTrade[];
   notes: Notes;
+  fileNotes: string;
+  fileNotesUpdatedAt: string | null;
   status: WorkflowStatus;
   decision: Decision;
   seniorNotes: string;
@@ -277,6 +279,8 @@ export type ApplicationPatch = Partial<
     | "income"
     | "debtTrades"
     | "notes"
+    | "fileNotes"
+    | "fileNotesUpdatedAt"
     | "decision"
     | "seniorNotes"
     | "seniorDecision"

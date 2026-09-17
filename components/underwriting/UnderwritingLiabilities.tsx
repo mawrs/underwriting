@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { Button, buttonClass } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Dropdown";
+import { FloatInput } from "@/components/ui/FloatInput";
 import { sampleDocumentHref } from "@/lib/documents";
 import { exportLiabilities } from "@/lib/export/xlsx";
 import { money } from "@/lib/format";
@@ -11,7 +11,6 @@ import type { Application, ApplicationPatch, DebtTrade } from "@/lib/types";
 
 export function UnderwritingLiabilities({
   application,
-  readOnly,
   onChange,
   showHeader = false,
   basePath,
@@ -23,12 +22,9 @@ export function UnderwritingLiabilities({
   basePath?: string;
 }) {
   const trades = application.debtTrades;
-  const total = trades
-    .filter((trade) => trade.includeInDti)
-    .reduce((sum, trade) => sum + ((trade.adjPayment ?? trade.payment) || 0), 0);
-  const housingId = application.underwriting.primaryHousingTradeId ?? "";
-  const housingTrades = trades.filter((trade) =>
-    /mortgage|housing|home_equity|rent/i.test(trade.category),
+  const total = trades.reduce(
+    (sum, trade) => sum + ((trade.adjPayment ?? trade.payment) || 0),
+    0,
   );
   const creditDoc = application.documents.find((item) => item.kind === "credit-report");
   const reportHref = creditDoc
@@ -42,7 +38,7 @@ export function UnderwritingLiabilities({
   }
 
   const body = (
-      <div className="flex flex-col gap-md pb-md pt-md">
+      <div className="flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1360px] table-fixed text-left text-sm">
             <colgroup>
@@ -58,7 +54,7 @@ export function UnderwritingLiabilities({
               <col className="w-[140px]" />
               <col />
             </colgroup>
-            <thead className="bg-gray-extra-light">
+            <thead className="bg-gray-lightest">
               <tr>
                 <th className="h-11 border-b border-gray-light px-xl" />
                 <Th>Creditor Name</Th>
@@ -78,19 +74,28 @@ export function UnderwritingLiabilities({
                 const adj = item.adjPayment ?? item.payment;
                 const sys = item.sysPayment ?? item.payment;
                 const original = item.originalBalance ?? item.highCredit;
+                function toggleInclude() {
+                  const includeInDti = !item.includeInDti;
+                  patchTrade(item.id, {
+                    includeInDti,
+                    adjPayment: includeInDti && !adj ? sys : adj,
+                  });
+                }
+
+                function onRowClick(event: MouseEvent<HTMLTableRowElement>) {
+                  if ((event.target as HTMLElement).closest("a, button, input, label, select, textarea")) {
+                    return;
+                  }
+                  toggleInclude();
+                }
+
                 return (
-                  <tr key={item.id} className="h-[62px]">
+                  <tr key={item.id} className="uw-list-row h-[62px]" onClick={onRowClick}>
                     <td className="border-b border-gray-light px-xl py-md">
                       <TradeCheckbox
                         checked={item.includeInDti}
-                        disabled={readOnly}
                         label={`Include ${item.category} in DTI`}
-                        onChange={(includeInDti) =>
-                          patchTrade(item.id, {
-                            includeInDti,
-                            adjPayment: includeInDti && !adj ? sys : adj,
-                          })
-                        }
+                        onChange={toggleInclude}
                       />
                     </td>
                     <Td>{item.lender}</Td>
@@ -98,14 +103,11 @@ export function UnderwritingLiabilities({
                     <Td>
                       <span className="block break-words whitespace-normal">{item.category}</span>
                     </Td>
-                    <Td align="right">
-                      {item.includeInDti && item.payment ? money(item.payment) : ""}
-                    </Td>
+                    <Td align="right">{item.payment ? money(item.payment) : ""}</Td>
                     <Td align="right">{money(sys)}</Td>
                     <td className="border-b border-gray-light px-xl py-md">
                       <AdjInput
                         value={adj}
-                        disabled={readOnly}
                         ariaLabel={`${item.category} adjusted payment`}
                         onChange={(adjPayment) => patchTrade(item.id, { adjPayment })}
                       />
@@ -121,37 +123,18 @@ export function UnderwritingLiabilities({
           </table>
         </div>
 
-        <div className="flex items-center justify-between gap-md px-md">
-          <Select
-            aria-label="Primary Housing Expenses"
-            disabled={readOnly}
-            value={housingId}
-            placeholder="Primary Housing Expenses"
-            className="w-[401px] max-w-full"
-            variant="box"
-            triggerClassName="h-[60px]"
-            options={[
-              { id: "", label: "Primary Housing Expenses" },
-              ...(application.borrower.livingArrangement === "Renting"
-                ? [{ id: "rent", label: `Rent — ${money(application.income.housingPayment)}` }]
-                : []),
-              ...housingTrades.map((item) => ({
-                id: item.id,
-                label: `${item.category} — ${money(item.adjPayment ?? item.payment)}`,
-              })),
-            ]}
-            onChange={(primaryHousingTradeId) =>
-              onChange({
-                underwriting: {
-                  ...application.underwriting,
-                  primaryHousingTradeId,
-                },
-              })
-            }
-          />
+        <div className="flex items-center justify-between gap-md bg-gray-lightest px-md py-md">
+          <div className="w-[401px] max-w-full">
+            <HousingExpenseInput
+              value={application.income.housingPayment}
+              onChange={(housingPayment) =>
+                onChange({ income: { ...application.income, housingPayment } })
+              }
+            />
+          </div>
           <p className="flex items-center gap-xs text-xl font-semibold whitespace-nowrap text-black">
-            <span>Total Monthly Liabilities:</span>
-            <span>{money(total)}</span>
+            <span className="text-lg">Total Monthly Liabilities:</span>
+            <span className={YELLOW_VALUE}>{money(total)}</span>
           </p>
         </div>
       </div>
@@ -164,7 +147,7 @@ export function UnderwritingLiabilities({
       <div className="uw-card-header">
         <h1 className="text-lg text-black">Credit Report Liabilities</h1>
         <div className="flex shrink-0 items-center gap-sm">
-          <Button variant="secondary" onClick={() => exportLiabilities(application)}>
+          <Button variant="secondary" className="h-[31px]" onClick={() => exportLiabilities(application)}>
             Export to Excel
           </Button>
           <Link href={reportHref} className={buttonClass("primary")}>
@@ -174,6 +157,42 @@ export function UnderwritingLiabilities({
       </div>
       {body}
     </div>
+  );
+}
+
+const YELLOW_VALUE =
+  "ml-auto block w-[105px] rounded-xs bg-yellow px-3 py-xs text-right text-base text-gray-dark";
+
+function HousingExpenseInput({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState("");
+  const display = focused ? (draft ? `$${draft}` : "") : value ? money(value) : "";
+
+  function commit(raw: string) {
+    const stripped = raw.replace(/[$,]/g, "");
+    if (stripped !== "" && !/^\d*\.?\d*$/.test(stripped)) return;
+    setDraft(stripped);
+    const parsed = Number.parseFloat(stripped);
+    onChange(Number.isFinite(parsed) ? parsed : 0);
+  }
+
+  return (
+    <FloatInput
+      label="Primary Housing Expenses"
+      value={display}
+      onFocus={() => {
+        setFocused(true);
+        setDraft(value ? String(value) : "");
+      }}
+      onBlur={() => setFocused(false)}
+      onChange={commit}
+    />
   );
 }
 
@@ -203,12 +222,10 @@ function Td({ children, align }: { children: ReactNode; align?: "right" }) {
 
 function AdjInput({
   value,
-  disabled,
   ariaLabel,
   onChange,
 }: {
   value: number;
-  disabled: boolean;
   ariaLabel: string;
   onChange: (value: number) => void;
 }) {
@@ -219,8 +236,7 @@ function AdjInput({
   return (
     <input
       aria-label={ariaLabel}
-      disabled={disabled}
-      className="ml-auto block w-[105px] rounded-xs border border-gray-light bg-white px-3 py-xs text-right text-base text-gray-dark"
+      className={`${YELLOW_VALUE} border-0 outline-none`}
       value={display}
       onFocus={() => {
         setFocused(true);
@@ -241,14 +257,12 @@ function AdjInput({
 
 function TradeCheckbox({
   checked,
-  disabled,
   label,
   onChange,
 }: {
   checked: boolean;
-  disabled: boolean;
   label: string;
-  onChange: (checked: boolean) => void;
+  onChange: () => void;
 }) {
   return (
     <button
@@ -256,11 +270,10 @@ function TradeCheckbox({
       role="checkbox"
       aria-checked={checked}
       aria-label={label}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
+      onClick={onChange}
       className={`flex size-7 shrink-0 items-center justify-center rounded-[2px] border ${
         checked ? "border-primary bg-primary text-white" : "border-gray-dark bg-white"
-      } disabled:opacity-50`}
+      }`}
     >
       {checked ? <CheckIcon /> : null}
     </button>

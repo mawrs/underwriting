@@ -12,11 +12,9 @@ const PRIOR_YEAR = CURRENT_YEAR - 1;
 
 export function IncomeCalculatorPanel({
   application,
-  readOnly,
   onChange,
 }: {
   application: Application;
-  readOnly: boolean;
   onChange: (patch: ApplicationPatch) => void;
 }) {
   const income = application.income;
@@ -40,140 +38,152 @@ export function IncomeCalculatorPanel({
       <div className="min-w-max">
         <CalcRow label="Annual">
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.annual}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("annual", value)}
           />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={calc.annual / 12} tone="final" />
         </CalcRow>
 
         <CalcRow label="Monthly">
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.monthly}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("monthly", value)}
           />
-          <ConstCell label="X" value="12" />
+          <Operator symbol="X" />
+          <ConstCell value="12" />
+          <Operator symbol="=" />
           <ResultCell value={calc.monthly * 12} tone="mid" />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={calc.monthly} tone="final" />
         </CalcRow>
 
         <CalcRow label="Semi Monthly">
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.semiMonthly}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("semiMonthly", value)}
           />
-          <ConstCell label="X" value="24" />
+          <Operator symbol="X" />
+          <ConstCell value="24" />
+          <Operator symbol="=" />
           <ResultCell value={calc.semiMonthly * 24} tone="mid" />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={(calc.semiMonthly * 24) / 12} tone="final" />
         </CalcRow>
 
         <CalcRow label="Biweekly">
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.biweekly}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("biweekly", value)}
           />
-          <ConstCell label="X" value="26" />
+          <Operator symbol="X" />
+          <ConstCell value="26" />
+          <Operator symbol="=" />
           <ResultCell value={calc.biweekly * 26} tone="mid" />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={(calc.biweekly * 26) / 12} tone="final" />
         </CalcRow>
 
         <CalcRow label="Weekly">
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.weekly}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("weekly", value)}
           />
-          <ConstCell label="X" value="52" />
+          <Operator symbol="X" />
+          <ConstCell value="52" />
+          <Operator symbol="=" />
           <ResultCell value={calc.weekly * 52} tone="mid" />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={(calc.weekly * 52) / 12} tone="final" />
         </CalcRow>
 
         <CalcRow label="Hourly">
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.hourlyRate}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("hourlyRate", value)}
           />
+          <Operator symbol="X" />
           <InputCell
-            label="X (Hours)"
+            label="Hours"
             value={calc.hourlyHours}
-            readOnly={readOnly}
             onChange={(value) => setField("hourlyHours", value)}
           />
+          <Operator symbol="=" />
           <ResultCell value={calc.hourlyRate * calc.hourlyHours} tone="mid" />
-          <ConstCell label="X" value="52" />
+          <Operator symbol="X" />
+          <ConstCell value="52" />
+          <Operator symbol="=" />
           <ResultCell value={calc.hourlyRate * calc.hourlyHours * 52} tone="mid" />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={(calc.hourlyRate * calc.hourlyHours * 52) / 12} tone="final" />
         </CalcRow>
 
         <CalcRow label="YTD Regular Income">
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.ytdGross}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("ytdGross", value)}
           />
           <InputCell
             label="Divided by (PP)"
             value={calc.ytdPeriods}
-            readOnly={readOnly}
             onChange={(value) => setField("ytdPeriods", value)}
           />
+          <Operator symbol="=" />
           <ResultCell value={ytdPerPeriod} tone="mid" />
+          <Operator symbol="X" />
           <InputCell
-            label="X (PP)"
+            label="PP"
             value={calc.ytdAnnualPeriods}
-            readOnly={readOnly}
             onChange={(value) => setField("ytdAnnualPeriods", value)}
           />
+          <Operator symbol="=" />
           <ResultCell value={ytdAnnual} tone="mid" />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={ytdMonthly} tone="final" />
         </CalcRow>
 
         <CalcRow label={String(CURRENT_YEAR)}>
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.yearCurrent}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("yearCurrent", value)}
           />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={calc.yearCurrent / 12} tone="final" />
         </CalcRow>
 
         <CalcRow label={String(PRIOR_YEAR)}>
           <InputCell
-            label="Gross Pay $"
+            label="Gross Pay"
             value={calc.yearPrior}
             moneyPrefix
-            readOnly={readOnly}
             onChange={(value) => setField("yearPrior", value)}
           />
           <ConstCell label="Divided by" value="12" />
+          <Operator symbol="=" />
           <ResultCell value={calc.yearPrior / 12} tone="final" />
         </CalcRow>
       </div>
@@ -229,10 +239,8 @@ function syncWorksheet(
 
 function CalcRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start gap-md border-b border-[#f0eef1] px-md py-[14px]">
-      <div className="flex w-[200px] shrink-0 items-center pt-xl">
-        <p className="text-sm font-semibold whitespace-nowrap text-black">{label}</p>
-      </div>
+    <div className="flex items-end gap-md border-b border-gray-light px-xl py-md">
+      <p className="w-[200px] shrink-0 pb-[7px] text-sm font-semibold whitespace-nowrap text-black">{label}</p>
       <div className="flex items-end gap-3">{children}</div>
     </div>
   );
@@ -242,13 +250,11 @@ function InputCell({
   label,
   value,
   moneyPrefix = false,
-  readOnly,
   onChange,
 }: {
   label: string;
   value: number;
   moneyPrefix?: boolean;
-  readOnly: boolean;
   onChange: (value: number) => void;
 }) {
   const [focused, setFocused] = useState(false);
@@ -257,17 +263,20 @@ function InputCell({
   const display = focused ? draft : value.toFixed(2);
 
   return (
-    <div className="flex min-w-[128px] flex-col items-start gap-xs">
-      <p className="text-xs whitespace-nowrap text-gray-medium">{label}</p>
-      <div className="flex h-[34px] items-center rounded-xs border border-gray-light bg-[#fffdf3] px-[10px]">
-        {moneyPrefix ? <span className="pr-[2px] text-[13px] text-gray-medium">$</span> : null}
+    <label className="flex min-w-[128px] flex-col items-start gap-xs">
+      <span className="text-xs whitespace-nowrap text-gray-medium">{label}</span>
+      <span className="relative block">
+        {moneyPrefix ? (
+          <span className="pointer-events-none absolute inset-y-0 left-sm flex items-center text-base text-gray-medium">
+            $
+          </span>
+        ) : null}
         <input
           type="text"
           inputMode="decimal"
-          readOnly={readOnly}
           aria-label={label}
-          className={`h-[19.5px] w-[130px] bg-transparent text-[13px] outline-none ${
-            !focused && empty ? "text-[#bcbcc0]" : "text-gray-dark"
+          className={`uw-input w-[140px] rounded-xs text-base ${moneyPrefix ? "pl-lg" : ""} ${
+            !focused && empty ? "text-gray-medium" : ""
           }`}
           value={display}
           onFocus={() => {
@@ -287,18 +296,30 @@ function InputCell({
             onChange(Number.isFinite(parsed) ? parsed : 0);
           }}
         />
-      </div>
-    </div>
+      </span>
+    </label>
   );
 }
 
-function ConstCell({ label, value }: { label: string; value: string }) {
+function Operator({ symbol }: { symbol: string }) {
+  return (
+    <span className="flex min-h-[34px] w-5 shrink-0 items-center justify-center text-base font-semibold text-gray-dark">
+      {symbol}
+    </span>
+  );
+}
+
+function ConstCell({ label, value }: { label?: string; value: string }) {
   return (
     <div className="flex min-w-[92px] flex-col items-start gap-xs">
-      <p className="text-xs whitespace-nowrap text-gray-medium">{label}</p>
-      <div className="flex h-[34px] w-[92px] items-center justify-center rounded-xs border border-[#eeecef] bg-[#f7f7f8]">
-        <p className="text-[13px] font-semibold text-gray-dark">{value}</p>
-      </div>
+      {label ? <p className="text-xs whitespace-nowrap text-gray-medium">{label}</p> : null}
+      <input
+        readOnly
+        tabIndex={-1}
+        aria-label={label || value}
+        className="uw-input w-[92px] rounded-xs bg-gray-lightest text-center text-base font-semibold"
+        value={value}
+      />
     </div>
   );
 }
@@ -306,25 +327,13 @@ function ConstCell({ label, value }: { label: string; value: string }) {
 function ResultCell({ value, tone }: { value: number | null; tone: "mid" | "final" }) {
   const dashed = value == null;
   return (
-    <div className="flex min-w-[128px] flex-col items-start gap-xs">
-      <p className="text-xs text-gray-medium">=</p>
-      <div
-        className={
-          tone === "final"
-            ? "flex h-[34px] w-[128px] items-center justify-end rounded-xs border border-[#bcdcef] bg-[#eaf3fa] px-[10px]"
-            : "flex h-[34px] w-[128px] items-center justify-end rounded-xs border border-[#efe3e7] bg-[#faf6f7] px-[10px]"
-        }
-      >
-        <p
-          className={
-            tone === "final"
-              ? "text-[13px] font-semibold whitespace-nowrap text-primary"
-              : "text-[13px] font-semibold whitespace-nowrap text-gray-dark"
-          }
-        >
-          {dashed ? "—" : money(value)}
-        </p>
-      </div>
-    </div>
+    <input
+      readOnly
+      tabIndex={-1}
+      className={`uw-input w-[128px] rounded-xs text-right text-base font-semibold ${
+        tone === "final" ? "border-primary bg-primary-bg text-primary" : "bg-gray-lightest"
+      }`}
+      value={dashed ? "—" : money(value)}
+    />
   );
 }

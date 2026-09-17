@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useApplication, useStore } from "@/lib/store";
 import { canSubmitToSenior } from "@/lib/validation";
-import { Button, buttonClass } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
 import { Dropdown, DropdownItem } from "@/components/ui/Dropdown";
+import { NotesModal } from "@/components/application/NotesModal";
 
 export function FileActions({ id }: { id: string }) {
   const router = useRouter();
@@ -14,14 +15,27 @@ export function FileActions({ id }: { id: string }) {
   const basePath = senior ? `/senior-queue/${id}` : `/applications/${id}`;
   const { application } = useApplication(id);
   const { submitToSenior, completeSeniorReview, updateApplication } = useStore();
+  const [notesOpen, setNotesOpen] = useState(false);
 
   if (!application) return null;
 
   return (
     <div className="flex items-center gap-sm">
-      <Link href={`${basePath}/review`} className={buttonClass("secondary")}>
-        New Review
-      </Link>
+      <Button variant="secondary" onClick={() => setNotesOpen(true)}>
+        Notes
+      </Button>
+      <NotesModal
+        open={notesOpen}
+        value={application.fileNotes}
+        updatedAt={application.fileNotesUpdatedAt}
+        onChange={(fileNotes, touch) =>
+          updateApplication(id, {
+            fileNotes,
+            ...(touch ? { fileNotesUpdatedAt: new Date().toISOString() } : {}),
+          })
+        }
+        onClose={() => setNotesOpen(false)}
+      />
       <Dropdown
         align="right"
         trigger={
