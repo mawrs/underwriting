@@ -237,7 +237,7 @@ button {
   }
 
   .uw-table-head {
-    background: var(--color-primary-bg);
+    background: var(--color-gray-extra-light);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.04em;

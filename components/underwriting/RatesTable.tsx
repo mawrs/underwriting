@@ -42,15 +42,15 @@ export function RatesTable({
       <table className="w-full min-w-[1100px] table-fixed text-left text-sm text-gray-dark">
         <thead>
           <tr>
-            <th className="border-b border-gray-light bg-gray-lightest px-xl py-md font-normal">
+            <th className="border-b border-gray-light bg-gray-extra-light px-xl py-md font-normal">
               Rate Type
             </th>
             {RATE_TERMS.map((term) => (
               <Fragment key={term}>
-                <th className="border-b border-gray-light bg-gray-lightest px-xl py-md font-normal">
+                <th className="border-b border-gray-light bg-gray-extra-light px-xl py-md font-normal">
                   {term}
                 </th>
-                <th className="border-b border-gray-light bg-gray-lightest px-xl py-md font-normal">
+                <th className="border-b border-gray-light bg-gray-extra-light px-xl py-md font-normal">
                   P&I Pmt.
                 </th>
               </Fragment>

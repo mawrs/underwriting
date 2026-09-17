@@ -130,7 +130,7 @@ export function BorrowerInformation({
         <h2 className="text-base font-semibold text-black">Status Information</h2>
         <div className="overflow-hidden rounded-sm border border-gray-light">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-lightest">
+            <thead className="bg-gray-extra-light">
               <tr>
                 <th className="w-[250px] border-b border-gray-light px-xl py-3 font-semibold text-black">
                   Date (EST)
@@ -156,7 +156,7 @@ export function BorrowerInformation({
         <h2 className="text-base font-semibold text-black">Borrower MLA Eligibility Status</h2>
         <div className="overflow-hidden rounded-sm border border-gray-light">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-lightest">
+            <thead className="bg-gray-extra-light">
               <tr>
                 <th className="border-b border-gray-light px-xl py-3 font-semibold text-black">
                   Date Sent (EST)
@@ -342,7 +342,7 @@ function VerificationBlock({
       <h2 className="text-base font-semibold text-black">{title}</h2>
       <div className="overflow-hidden rounded-sm border border-gray-light">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-lightest">
+          <thead className="bg-gray-extra-light">
             <tr>
               <th className="border-b border-gray-light px-xl py-3 font-semibold text-black">
                 Date Sent (EST)

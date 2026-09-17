@@ -107,7 +107,7 @@ function OfferGroup({
         <span className="text-gray-dark">( See TERMS and CONDITIONS below )</span>
       </p>
       <div className="flex flex-col gap-xs">
-        <div className="grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-center bg-gray-lightest text-sm font-semibold text-black">
+        <div className="grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-center bg-gray-extra-light text-sm font-semibold text-black">
           <div className="h-11" />
           <div className="h-11 px-xl py-sm">Term</div>
           <div className="h-11 px-xl py-sm">Monthly Payment</div>

@@ -58,7 +58,7 @@ export function UnderwritingLiabilities({
               <col className="w-[140px]" />
               <col />
             </colgroup>
-            <thead className="bg-gray-lightest">
+            <thead className="bg-gray-extra-light">
               <tr>
                 <th className="h-11 border-b border-gray-light px-xl" />
                 <Th>Creditor Name</Th>

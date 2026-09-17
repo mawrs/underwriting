@@ -62,7 +62,7 @@ export function PayoffsPage({ mode = "all" }: { mode?: "all" | "payoff" }) {
         ) : liabilities ? (
           <div>
             <div
-              className={`${LOAN_ROW_GRID} h-11 border-b border-gray-light bg-gray-lightest px-xl text-sm font-semibold whitespace-nowrap text-black`}
+              className={`${LOAN_ROW_GRID} h-11 border-b border-gray-light bg-gray-extra-light px-xl text-sm font-semibold whitespace-nowrap text-black`}
             >
               <div className="flex items-center gap-lg">
                 <span className="size-[21px] shrink-0" aria-hidden />
