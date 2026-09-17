@@ -45,7 +45,7 @@ export function PayoffsPage({ mode = "all" }: { mode?: "all" | "payoff" }) {
             <button
               type="button"
               disabled={readOnly}
-              className={`${actionClass} disabled:text-gray-medium`}
+              className="uw-btn-link"
               onClick={() => setLoans([...loans, emptyStudentLoan()])}
             >
               Add another student loan
@@ -97,7 +97,7 @@ export function PayoffsPage({ mode = "all" }: { mode?: "all" | "payoff" }) {
               <button
                 type="button"
                 disabled={readOnly}
-                className={`${actionClass} disabled:text-gray-medium`}
+                className="uw-btn-link"
                 onClick={() => setLoans([...loans, emptyPayoffLoan()])}
               >
                 Add another student loan
@@ -121,9 +121,6 @@ export function PayoffsPage({ mode = "all" }: { mode?: "all" | "payoff" }) {
     </div>
   );
 }
-
-const actionClass =
-  "inline-flex appearance-none items-center gap-sm border-0 bg-transparent p-0 text-sm font-semibold leading-[1.42] text-primary hover:text-primary-hover";
 
 function PromptLine({
   prompt,

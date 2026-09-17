@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FloatInput } from "@/components/ui/FloatInput";
 import { selectedPayoffTotal } from "@/lib/calculations";
 import { money } from "@/lib/format";
 import { emptyPayoffLoan, normalizeLiability } from "@/lib/payoffs";
@@ -46,7 +47,7 @@ export function UnderwritingPayoff({
           <button
             type="button"
             disabled={readOnly}
-            className="text-sm font-semibold text-primary hover:text-primary-hover disabled:text-gray-medium"
+            className="uw-btn-link"
             onClick={() => setPayoffs([...loans, emptyPayoffLoan()])}
           >
             Add another student loan
@@ -197,7 +198,7 @@ function PayoffCard({
         ) : (
           <button
             type="button"
-            className="inline-flex items-center gap-sm text-sm font-semibold text-primary hover:text-primary-hover"
+            className="uw-btn-link"
             onClick={() => setAddingAddress(true)}
           >
             <PlusIcon />
@@ -206,39 +207,6 @@ function PayoffCard({
         )}
       </div>
     </article>
-  );
-}
-
-function FloatInput({
-  label,
-  value,
-  readOnly,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  readOnly: boolean;
-  onChange: (value: string) => void;
-}) {
-  const filled = value.trim().length > 0;
-  return (
-    <label className="relative min-w-0 w-full flex-1">
-      <input
-        aria-label={label}
-        value={value}
-        readOnly={readOnly}
-        placeholder={filled ? undefined : label}
-        onChange={(event) => onChange(event.target.value)}
-        className={`h-[60px] w-full rounded-xs border border-gray-light bg-white text-base outline-none placeholder:text-gray-dark ${
-          filled ? "px-md pt-[22px] pb-sm text-black" : "px-md text-gray-dark"
-        }`}
-      />
-      {filled ? (
-        <span className="pointer-events-none absolute top-[6px] left-[15px] text-[10px] leading-[1.4] text-gray-dark">
-          {label}
-        </span>
-      ) : null}
-    </label>
   );
 }
 

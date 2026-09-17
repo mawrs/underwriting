@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Button, buttonClass } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Dropdown";
 import { sampleDocumentHref } from "@/lib/documents";
 import { exportLiabilities } from "@/lib/export/xlsx";
 import { money } from "@/lib/format";
@@ -121,30 +122,33 @@ export function UnderwritingLiabilities({
         </div>
 
         <div className="flex items-center justify-between gap-md px-md">
-          <select
+          <Select
             aria-label="Primary Housing Expenses"
             disabled={readOnly}
             value={housingId}
-            onChange={(event) =>
+            placeholder="Primary Housing Expenses"
+            className="w-[401px] max-w-full"
+            variant="box"
+            triggerClassName="h-[60px]"
+            options={[
+              { id: "", label: "Primary Housing Expenses" },
+              ...(application.borrower.livingArrangement === "Renting"
+                ? [{ id: "rent", label: `Rent — ${money(application.income.housingPayment)}` }]
+                : []),
+              ...housingTrades.map((item) => ({
+                id: item.id,
+                label: `${item.category} — ${money(item.adjPayment ?? item.payment)}`,
+              })),
+            ]}
+            onChange={(primaryHousingTradeId) =>
               onChange({
                 underwriting: {
                   ...application.underwriting,
-                  primaryHousingTradeId: event.target.value,
+                  primaryHousingTradeId,
                 },
               })
             }
-            className="h-[60px] w-[401px] max-w-full rounded-xs border border-gray-light bg-white px-md text-base text-gray-dark"
-          >
-            <option value="">Primary Housing Expenses</option>
-            {application.borrower.livingArrangement === "Renting" ? (
-              <option value="rent">Rent — {money(application.income.housingPayment)}</option>
-            ) : null}
-            {housingTrades.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.category} — {money(item.adjPayment ?? item.payment)}
-              </option>
-            ))}
-          </select>
+          />
           <p className="flex items-center gap-xs text-xl font-semibold whitespace-nowrap text-black">
             <span>Total Monthly Liabilities:</span>
             <span>{money(total)}</span>

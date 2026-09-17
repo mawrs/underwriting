@@ -5,6 +5,7 @@ import { useFileWorkspace } from "@/components/application/file-context";
 import { StageIntro } from "@/components/application/StageIntro";
 import { WorkbookActions } from "@/components/application/WorkbookActions";
 import { FlagLine } from "@/components/shared/FlagLine";
+import { Select } from "@/components/ui/Dropdown";
 import { seniorChanges } from "@/lib/diffs";
 import { useStore } from "@/lib/store";
 import { canSubmitToSenior, submissionChecklist } from "@/lib/validation";
@@ -92,22 +93,22 @@ export function SubmitPanel({ application }: { application: Application }) {
       {mode === "primary" ? (
         <section className="uw-card-pad">
           <h2 className="text-sm font-semibold text-navy">Decision</h2>
-          <select
-            className="uw-input mt-sm"
+          <Select
+            variant="input"
+            className="mt-sm"
             value={application.decision}
             disabled={locked}
-            onChange={(event) =>
+            aria-label="Decision"
+            options={decisions.map((item) => ({
+              id: item,
+              label: item || "Select a decision",
+            }))}
+            onChange={(decision) =>
               updateApplication(application.id, {
-                decision: event.target.value as Decision,
+                decision: decision as Decision,
               })
             }
-          >
-            {decisions.map((item) => (
-              <option key={item || "none"} value={item}>
-                {item || "Select a decision"}
-              </option>
-            ))}
-          </select>
+          />
           <p className="mt-sm text-sm text-gray-dark">
             {needsDocs
               ? "This keeps the file in the pre-review queue as needs documentation. It does not send a customer letter."

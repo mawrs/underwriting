@@ -1,6 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
+import { Select } from "@/components/ui/Dropdown";
 import { sampleDocumentHref } from "@/lib/documents";
 import { estDateTime, titleCase } from "@/lib/format";
 import type { Application, DocumentStatus, UploadedDocument } from "@/lib/types";
@@ -124,22 +125,20 @@ export function DocumentsTable({
                   {readOnly ? (
                     statusLabel(doc)
                   ) : (
-                    <select
-                      className="appearance-none bg-transparent text-sm text-gray-dark outline-none"
+                    <Select
+                      variant="plain"
                       value={doc.reviewStatus}
                       aria-label={`${doc.name} status`}
-                      onChange={(event) =>
+                      options={STATUSES.map((status) => ({
+                        id: status,
+                        label: status === "pending" ? doc.sourceStatus : titleCase(status),
+                      }))}
+                      onChange={(reviewStatus) =>
                         update(doc.id, {
-                          reviewStatus: event.target.value as DocumentStatus,
+                          reviewStatus: reviewStatus as DocumentStatus,
                         })
                       }
-                    >
-                      {STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {status === "pending" ? doc.sourceStatus : titleCase(status)}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   )}
                 </td>
                 <td className="uw-list-td">{doc.internal ? "Y" : "N"}</td>

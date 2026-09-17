@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Select } from "@/components/ui/Dropdown";
 import { calculate } from "@/lib/calculations";
 import { estDateTime } from "@/lib/format";
 import type { Application, ApplicationPatch } from "@/lib/types";
@@ -172,7 +173,7 @@ export function BorrowerInformation({
             </tbody>
           </table>
         </div>
-        <Link href={`${basePath}/documents`} className="text-sm font-semibold text-primary hover:text-primary-hover">
+        <Link href={`${basePath}/documents`} className="uw-btn-link">
           View MLA PDF V1
         </Link>
       </section>
@@ -198,7 +199,7 @@ export function BorrowerInformation({
           disabled={readOnly}
           onChange={(underwriter) => onChange({ underwriter })}
         />
-        <Link href={`${basePath}/documents`} className="text-sm font-semibold text-primary hover:text-primary-hover">
+        <Link href={`${basePath}/documents`} className="uw-btn-link">
           View Credit Report
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-md">
@@ -330,25 +331,15 @@ function FloatSelect({
   return (
     <div className="flex w-full flex-col gap-md">
       <p className="text-base font-semibold text-black">{heading}</p>
-      <div className="relative">
-        <select
-          aria-label={heading}
-          value={value}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-[60px] w-full appearance-none rounded-xs border border-gray-light bg-white px-md pt-[18px] pb-sm text-base text-black"
-        >
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-        <span className="pointer-events-none absolute top-[6px] left-[15px] text-[10px] leading-[1.4] text-gray-dark">
-          {label}
-        </span>
-        <ChevronDown className="pointer-events-none absolute top-1/2 right-md size-7 -translate-y-1/2 text-gray-dark" />
-      </div>
+      <Select
+        variant="float"
+        label={label}
+        value={value}
+        options={options}
+        disabled={disabled}
+        aria-label={heading}
+        onChange={onChange}
+      />
     </div>
   );
 }
@@ -403,7 +394,7 @@ function VerificationBlock({
           </tbody>
         </table>
       </div>
-      <Link href={href} className="text-sm font-semibold text-primary hover:text-primary-hover">
+      <Link href={href} className="uw-btn-link">
         {pdfLabel}
       </Link>
       {children}
@@ -421,13 +412,5 @@ function InfoTip({ text }: { text: string }) {
       </svg>
       <span className="sr-only">{text}</span>
     </span>
-  );
-}
-
-function ChevronDown({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 28 28" className={className} fill="none" aria-hidden="true">
-      <path d="M8 11.5 14 17.5 20 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }

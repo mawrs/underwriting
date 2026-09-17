@@ -224,6 +224,7 @@ export interface Application {
   owner: string;
   borrower: Person;
   cosigner: Person | null;
+  cosignerStatus: string;
   employment: Employment[];
   documents: UploadedDocument[];
   liabilities: Liability[];

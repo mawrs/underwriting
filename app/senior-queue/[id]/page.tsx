@@ -6,5 +6,5 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/senior-queue/${id}/payoffs`);
+  redirect(`/senior-queue/${id}/opportunity`);
 }

@@ -2,6 +2,7 @@
 
 import { NumberField, ReadField } from "@/components/shared/Fields";
 import { FlagList } from "@/components/shared/FlagLine";
+import { Select } from "@/components/ui/Dropdown";
 import type { Application, IncomeFrequency, IncomeWorksheet } from "@/lib/types";
 import { money, percent } from "@/lib/format";
 import { calculate } from "@/lib/calculations";
@@ -73,24 +74,21 @@ export function IncomeForm({
       <section className="uw-card-pad">
         <h2 className="text-sm font-semibold text-navy">Verified pay</h2>
         <div className="mt-sm grid gap-md sm:grid-cols-3">
-          <label className="text-xs text-gray-medium">
+          <div className="text-xs text-gray-medium">
             Frequency
-            <select
-              className="uw-input mt-xs block w-full"
+            <Select
+              variant="input"
+              className="mt-xs"
               value={income.selectedFrequency}
               disabled={readOnly}
-              onChange={(event) =>
-                setIncome({ selectedFrequency: event.target.value as IncomeFrequency })
+              aria-label="Frequency"
+              options={frequencies}
+              onChange={(selectedFrequency) =>
+                setIncome({ selectedFrequency: selectedFrequency as IncomeFrequency })
               }
-            >
-              {frequencies.map((freq) => (
-                <option key={freq} value={freq}>
-                  {freq}
-                </option>
-              ))}
-            </select>
+            />
             <div className="mt-xs text-[11px] text-gray-medium">From: pay stubs</div>
-          </label>
+          </div>
           <NumberField
             label="Gross pay"
             value={income.grossPay}

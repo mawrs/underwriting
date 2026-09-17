@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Select } from "@/components/ui/Dropdown";
 import { useApplication } from "@/lib/store";
 import {
   MASTER_SHEETS,
@@ -190,17 +191,12 @@ function FieldInput({
 
   if (field.kind === "select") {
     return (
-      <select
-        className="h-[34px] w-full bg-white px-sm text-sm outline-none"
+      <Select
+        variant="compact"
         value={values[field.id] ?? field.options?.[0] ?? ""}
-        onChange={(event) => onChange(field.id, event.target.value)}
-      >
-        {(field.options ?? []).map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+        options={field.options ?? []}
+        onChange={(next) => onChange(field.id, next)}
+      />
     );
   }
 

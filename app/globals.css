@@ -108,7 +108,9 @@ input,
 select,
 textarea,
 button {
-  font: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 @layer components {
@@ -184,6 +186,31 @@ button {
     background: var(--color-gray-lightest);
   }
 
+  .uw-btn-link {
+    display: inline-flex;
+    appearance: none;
+    align-items: center;
+    gap: var(--spacing-sm);
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.42;
+    color: var(--color-primary);
+  }
+
+  .uw-btn-link:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+
+  .uw-btn-link:disabled {
+    cursor: not-allowed;
+    color: var(--color-gray-medium);
+    text-decoration: none;
+  }
+
   .uw-tab {
     border: 1px solid var(--color-gray-light);
     border-radius: var(--radius-sm);
@@ -238,6 +265,59 @@ button {
     outline-offset: 1px;
   }
 
+  .uw-dropdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: auto;
+    border: 1px solid var(--color-gray-light);
+    border-radius: var(--radius-xs);
+    background: var(--color-white);
+    padding: var(--spacing-sm);
+    box-shadow:
+      0 0.3px 0.9px rgba(0, 0, 0, 0.1),
+      0 1.6px 3.6px rgba(0, 0, 0, 0.13);
+  }
+
+  .uw-dropdown-item {
+    display: flex;
+    min-height: 48px;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    border-radius: var(--radius-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    font-size: var(--text-sm);
+    line-height: 1.42;
+    color: var(--color-charcoal);
+    outline: none;
+  }
+
+  .uw-dropdown-item:hover,
+  .uw-dropdown-item[data-active="true"],
+  .uw-dropdown-item[aria-selected="true"] {
+    background: var(--color-gray-lightest);
+  }
+
+  .uw-dropdown-item:disabled {
+    cursor: not-allowed;
+    color: var(--color-gray-medium);
+  }
+
+  .uw-list-table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .uw-list-table .uw-list-th,
+  .uw-list-table .uw-list-td {
+    width: calc(100% / 6);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .uw-list-th {
     height: 44px;
     border-bottom: 1px solid var(--color-gray-light);
@@ -258,9 +338,18 @@ button {
     white-space: nowrap;
   }
 
-  .uw-list-td > a {
-    display: block;
-    margin: -16px -24px;
-    padding: 16px 24px;
+  .uw-list-row {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .uw-list-row:hover {
+    background: var(--color-gray-lightest);
+  }
+
+  .uw-list-row-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
   }
 }

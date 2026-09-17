@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FloatInput } from "@/components/ui/FloatInput";
 import { money } from "@/lib/format";
 import { normalizeLiability } from "@/lib/payoffs";
 import type { Liability, PayoffType } from "@/lib/types";
@@ -42,11 +43,11 @@ export function LoanCard({
           <div className="flex shrink-0 items-center gap-3xl">
             <div>
               <p className="text-xs text-gray-medium">Account Number</p>
-              <p className="text-sm font-semibold text-black tabular-nums">{loan.accountNumber || "—"}</p>
+              <p className="text-sm font-normal text-black tabular-nums">{loan.accountNumber || "—"}</p>
             </div>
             <div>
               <p className="text-xs text-gray-medium">Monthly Payment</p>
-              <p className="text-sm font-semibold text-black tabular-nums">{money(loan.payment)}</p>
+              <p className="text-sm font-normal text-black tabular-nums">{money(loan.payment)}</p>
             </div>
           </div>
         </div>
@@ -70,8 +71,8 @@ export function LoanCard({
             <p className="text-sm text-gray-medium">{loan.lender || "New student loan"}</p>
           </div>
         </div>
-        <p className="truncate text-sm font-semibold text-black tabular-nums">{loan.accountNumber || "—"}</p>
-        <p className="text-sm font-semibold text-black tabular-nums">{money(loan.payment)}</p>
+        <p className="truncate text-sm font-normal text-black tabular-nums">{loan.accountNumber || "—"}</p>
+        <p className="text-sm font-normal text-black tabular-nums">{money(loan.payment)}</p>
       </div>
     </article>
   );
@@ -138,19 +139,19 @@ function PayoffFields({
   return (
     <div className="flex flex-col gap-xl">
       <div className="grid grid-cols-3 gap-md">
-        <TextField
+        <FloatInput
           label="Loan Identifier"
           value={loan.adjLoanIdentifier}
           readOnly={readOnly}
           onChange={(value) => onChange({ adjLoanIdentifier: value })}
         />
-        <TextField
+        <FloatInput
           label="Adj Creditor Name"
           value={loan.adjCreditorName}
           readOnly={readOnly}
           onChange={(value) => onChange({ adjCreditorName: value })}
         />
-        <TextField
+        <FloatInput
           label="Adj Account Number"
           value={loan.adjAccountNumber}
           readOnly={readOnly}
@@ -164,7 +165,7 @@ function PayoffFields({
           readOnly={readOnly}
           onChange={(payoffType) => onChange({ payoffType })}
         />
-        <TextField
+        <FloatInput
           label="Adj Loan Balance"
           value={loan.adjBalance ? String(loan.adjBalance) : ""}
           readOnly={readOnly}
@@ -210,7 +211,7 @@ function PayoffFields({
         ) : (
           <button
             type="button"
-            className="mt-sm inline-flex items-center gap-sm text-sm font-semibold text-primary hover:text-primary-hover"
+            className="uw-btn-link mt-sm"
             onClick={() => setAddingAddress(true)}
           >
             + Add new address
@@ -260,32 +261,3 @@ function PayoffToggle({
   );
 }
 
-function TextField({
-  label,
-  value,
-  readOnly,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  readOnly: boolean;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="flex min-w-0 flex-col">
-      {readOnly ? (
-        <>
-          <span className="mb-xs text-xs text-gray-medium">{label}</span>
-          <span className="text-sm text-black">{value || "—"}</span>
-        </>
-      ) : (
-        <input
-          className="h-[60px] w-full rounded-xs border border-gray-light bg-white px-md text-base text-charcoal outline-none placeholder:text-gray-dark focus:outline-2 focus:outline-offset-1 focus:outline-primary"
-          value={value}
-          placeholder={label}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      )}
-    </label>
-  );
-}

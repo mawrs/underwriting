@@ -22,7 +22,7 @@ import type {
   UnderwritingExtras,
 } from "./types";
 
-const STORAGE_KEY = "uw-prototype-v7";
+const STORAGE_KEY = "uw-prototype-v9";
 const SERVER_SNAPSHOT = seedApplications;
 
 type Listener = () => void;
@@ -111,6 +111,7 @@ function loadApplications(): Application[] {
       workbookCopy: item.workbookCopy ?? null,
       opportunity: item.opportunity ?? {},
       underwriting: hydrateUnderwriting(item.underwriting, item),
+      cosignerStatus: item.cosignerStatus ?? (item.cosigner ? "On file" : ""),
       income: item.income
         ? { ...item.income, calculator: hydrateCalculator(item.income) }
         : item.income,

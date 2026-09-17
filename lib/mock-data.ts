@@ -243,7 +243,7 @@ const primaryLiabilities: Liability[] = [
     highCredit: 7600,
     balance: 6120,
     payment: 1,
-    selected: true,
+    selected: false,
     adjCreditorName: "SALLIE MAE",
     adjAccountNumber: "6001842200842216",
     adjBalance: 6188.4,
@@ -259,7 +259,7 @@ const primaryLiabilities: Liability[] = [
     highCredit: 9100,
     balance: 8940,
     payment: 0,
-    selected: true,
+    selected: false,
     adjCreditorName: "SALLIE MAE",
     adjAccountNumber: "6001842200843327",
     adjBalance: 9100,
@@ -275,7 +275,7 @@ const primaryLiabilities: Liability[] = [
     highCredit: 10400,
     balance: 10180,
     payment: 0,
-    selected: true,
+    selected: false,
     adjCreditorName: "SALLIE MAE",
     adjAccountNumber: "6001842200844438",
     adjBalance: 10400,
@@ -291,7 +291,7 @@ const primaryLiabilities: Liability[] = [
     highCredit: 7900,
     balance: 7710,
     payment: 0,
-    selected: true,
+    selected: false,
     adjCreditorName: "SALLIE MAE",
     adjAccountNumber: "6001842200845549",
     adjBalance: 7840,
@@ -307,7 +307,7 @@ const primaryLiabilities: Liability[] = [
     highCredit: 14200,
     balance: 13940,
     payment: 0,
-    selected: true,
+    selected: false,
     adjCreditorName: "SALLIE MAE",
     adjAccountNumber: "6001842200846650",
     adjBalance: 14166.5,
@@ -323,7 +323,7 @@ const primaryLiabilities: Liability[] = [
     highCredit: 15000,
     balance: 14680,
     payment: 0,
-    selected: true,
+    selected: false,
     adjCreditorName: "SALLIE MAE",
     adjAccountNumber: "6001842200847761",
     adjBalance: 14800,
@@ -496,6 +496,7 @@ const elena: Application = {
     school: "Midwest State University",
   },
   cosigner: null,
+  cosignerStatus: "",
   employment: [
     {
       employer: "Riverside Medical Center",
@@ -663,14 +664,136 @@ function cloneLiabilitiesFor(id: string, amount: number): Liability[] {
     balance: round2(item.balance * scale),
     adjBalance: round2(item.adjBalance * scale),
     payment: round2(item.payment * scale),
-    selected: item.source === "sallie-mae",
+    selected: false,
     confirmed: false,
   }));
-  const selected = items.filter((item) => item.selected);
-  const sum = selected.reduce((total, item) => total + item.adjBalance, 0);
-  const last = selected[selected.length - 1];
+  const payoffLoans = items.filter((item) => item.source === "sallie-mae");
+  const sum = payoffLoans.reduce((total, item) => total + item.adjBalance, 0);
+  const last = payoffLoans[payoffLoans.length - 1];
   if (last) last.adjBalance = round2(last.adjBalance + (amount - sum));
   return items;
+}
+
+const STAGE: Record<WorkflowStatus, string> = {
+  "pre-review": "UW - PreReview",
+  "needs-docs": "Needs Documentation",
+  "senior-review": "Senior Review",
+  returned: "Returned to UW",
+  approved: "Approved",
+};
+const UW_BORROWER_STATUSES = [
+  "Lead",
+  "Application Not Complete",
+  "Awaiting CoSigner Completion",
+  "UW - PreReview",
+  "In Underwriting",
+];
+const COSIGNER_ON_FILE = ["On file", "Awaiting docs", "Incomplete", "Pending"];
+const COSIGNER_NONE = ["", "Not required"];
+const REFERRERS = ["Credible", "Splash", "Paid Search", "NerdWallet", "Organic", "Partner"];
+const UNDERWRITERS = [
+  "Dana Whitfield",
+  "Dustin Pennington",
+  "Harper Quinn",
+  "June Calder",
+  "Miles Crowe",
+  "Owen Briggs",
+  "Ravi Mehra",
+  "Sasha Lind",
+];
+const OWNERS = ["Nolan Keene", "Ivy Tran", "Bennett Cole", "Reese Alvarez", "Casey Morrow"];
+const STATES = [
+  ["MN", "Roseville", "55113"],
+  ["TX", "Austin", "78701"],
+  ["CA", "Rancho Santa Margarita", "92688"],
+  ["NY", "Brooklyn", "11201"],
+  ["FL", "Miami", "33101"],
+  ["HI", "Honolulu", "96813"],
+  ["AK", "Anchorage", "99501"],
+  ["VT", "Burlington", "05401"],
+  ["WY", "Cheyenne", "82001"],
+  ["GA", "Atlanta", "30318"],
+  ["OH", "Cleveland", "44114"],
+  ["AZ", "Phoenix", "85001"],
+  ["CO", "Denver", "80202"],
+  ["WA", "Seattle", "98101"],
+  ["MA", "Boston", "02108"],
+] as const;
+
+const EDGE_BORROWERS = [
+  "José García-López",
+  "Siobhán O'Connor",
+  "Mary-Anne de la Cruz",
+  "Li Wei",
+  "Christopher Montgomery-Whitaker IV",
+  "Ngọc Trần",
+  "Jean-Luc Moreau",
+  "Jordan Hale",
+  "Jordan Park",
+  "Amina Al-Farsi",
+  "Björk Sigurdsdóttir",
+  "Ann",
+  "Rae Kim-Park",
+  "Theo Lang-Ellis",
+];
+const FIRST_NAMES = [
+  "Ava", "Noah", "Mia", "Leo", "Zoe", "Kai", "Nina", "Omar", "Ivy", "Eli",
+  "Sana", "Hugo", "Lila", "Beau", "Noor", "Wes", "Tessa", "Cruz", "Pia", "Asher",
+  "Mara", "Felix", "Nadia", "Mateo", "Claire", "Anika", "Elena", "Priya", "Jonah", "Skye",
+];
+const LAST_NAMES = [
+  "Patel", "Kim", "Rossi", "Nguyen", "Brooks", "Khan", "Diaz", "Okafor", "Berg", "Singh",
+  "Cohen", "Walsh", "Ito", "Nasser", "Frost", "Adeyemi", "Vargas", "Hale", "Qureshi", "Lund",
+  "Okoye", "Brennan", "Ruiz", "Bose", "Grant", "Voss", "Ellison", "Santos", "Meyer", "Cho",
+];
+const EDGE_COSIGNERS = [
+  "Morgan Phelps",
+  "Émile D'Arcy",
+  "Jean-Pierre Dubois",
+  "Hae-Won Choi",
+  "Maria del Carmen Ruiz",
+  "O'Neil Fitzgerald",
+];
+const COSIGNER_FIRST = ["Robin", "Alex", "Sam", "Taylor", "Casey", "Riley", "Quinn", "Drew", "Jamie", "Cameron"];
+const COSIGNER_LAST = ["Phelps", "Hart", "Nguyen", "Cole", "Shah", "Bennett", "Ortiz", "Walsh", "Ibarra", "Young"];
+
+function mulberry32(seed: number) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function pick<T>(rand: () => number, items: readonly T[]) {
+  return items[Math.floor(rand() * items.length)]!;
+}
+
+function slug(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.|\.$/g, "") || "borrower";
+}
+
+function padDate(year: number, month: number, day: number, hour: number, minute: number) {
+  const mm = String(month).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  const hh = String(hour).padStart(2, "0");
+  const min = String(minute).padStart(2, "0");
+  return `${year}-${mm}-${dd}T${hh}:${min}:00`;
+}
+
+function statusFor(index: number): WorkflowStatus {
+  if (index % 7 === 0) return "approved";
+  if (index % 7 === 1) return "senior-review";
+  if (index % 7 === 2) return "needs-docs";
+  if (index % 7 === 3) return "returned";
+  return "pre-review";
 }
 
 function lightApplication(input: {
@@ -686,18 +809,26 @@ function lightApplication(input: {
   applicationDate: string;
   hardCreditDate: string;
   preReviewAt: string;
-  status?: WorkflowStatus;
+  status: WorkflowStatus;
   email: string;
   state: string;
-  hasCosigner?: boolean;
+  city: string;
+  zip: string;
+  cosignerName?: string;
+  cosignerStatus: string;
+  borrowerStatus: string;
 }): Application {
   const liabilities = cloneLiabilitiesFor(input.id, input.amount);
+  const hasCosigner = Boolean(input.cosignerName);
+  const nowStamp = input.preReviewAt;
+  const submitted = input.status === "senior-review" || input.status === "approved" || input.status === "returned";
 
   return {
     ...elena,
     id: input.id,
     opportunityName: `${input.name}-${input.id}`,
     recordType: input.recordType,
+    stage: STAGE[input.status],
     amount: input.amount,
     applicationDate: input.applicationDate,
     hardCreditDate: input.hardCreditDate,
@@ -707,13 +838,22 @@ function lightApplication(input: {
     referrer: input.referrer,
     underwriter: input.underwriter,
     owner: input.owner,
-    status: input.status ?? "pre-review",
-    cosigner: input.hasCosigner ? sampleCosigner : null,
+    status: input.status,
+    cosigner: hasCosigner
+      ? {
+          ...sampleCosigner,
+          fullName: input.cosignerName!,
+          email: `${slug(input.cosignerName!)}@example.com`,
+        }
+      : null,
+    cosignerStatus: input.cosignerStatus,
     borrower: {
       ...elena.borrower,
       fullName: input.name,
       email: input.email,
       state: input.state,
+      city: input.city,
+      zip: input.zip,
     },
     income: {
       ...elena.income,
@@ -734,136 +874,90 @@ function lightApplication(input: {
     decision: "",
     seniorNotes: "",
     seniorDecision: "",
-    submittedAt: null,
-    returnedAt: null,
-    approvedAt: null,
+    submittedAt: submitted ? nowStamp : null,
+    returnedAt: input.status === "returned" ? nowStamp : null,
+    approvedAt: input.status === "approved" ? nowStamp : null,
     primarySnapshot: null,
     lastSavedAt: null,
     underwriting: {
-      borrowerStatus: input.hasCosigner ? "Awaiting CoSigner Completion" : "UW - PreReview",
-      supervisorApproval: false,
+      borrowerStatus: input.borrowerStatus,
+      supervisorApproval: input.status === "approved",
       mlaEligible: "no",
       primaryHousingTradeId: "",
     },
   };
 }
 
-export const seedApplications: Application[] = [
-  elena,
-  lightApplication({
-    id: "2078834",
-    name: "Mara Ellison",
-    recordType: "InSchool",
-    amount: 31800,
-    priority: 2,
-    difficulty: "Medium",
-    referrer: "Splash",
-    underwriter: "Miles Crowe",
-    owner: "Ivy Tran",
-    applicationDate: "2026-08-27T11:20:00",
-    hardCreditDate: "2026-08-16T10:02:00",
-    preReviewAt: "2026-08-28T09:10:00",
-    email: "mara.ellison@example.com",
-    state: "TX",
-    hasCosigner: true,
-  }),
-  lightApplication({
-    id: "2081902",
-    name: "Theo Lang",
-    recordType: "InSchool",
-    amount: 44750,
-    priority: 3,
-    difficulty: "Hard",
-    referrer: "Paid Search",
-    underwriter: "Harper Quinn",
-    owner: "Bennett Cole",
-    applicationDate: "2026-08-26T16:40:00",
-    hardCreditDate: "2026-08-18T09:00:00",
-    preReviewAt: "2026-08-28T08:44:00",
-    email: "theo.lang@example.com",
-    state: "OH",
-    hasCosigner: true,
-  }),
-  lightApplication({
-    id: "2076510",
-    name: "Anika Bose",
-    recordType: "InSchool",
-    amount: 151200,
-    priority: 1,
-    difficulty: "Hard",
-    referrer: "NerdWallet",
-    underwriter: "Ravi Mehra",
-    owner: "Reese Alvarez",
-    applicationDate: "2026-08-25T14:12:00",
-    hardCreditDate: "2026-08-15T13:22:00",
-    preReviewAt: "2026-08-28T08:12:00",
-    email: "anika.bose@example.com",
-    state: "CA",
-    hasCosigner: true,
-  }),
-  lightApplication({
-    id: "2075208",
-    name: "Felix Grant",
-    recordType: "InSchool",
-    amount: 5200,
-    priority: 6,
-    difficulty: "Medium",
-    referrer: "Credible",
-    underwriter: "June Calder",
-    owner: "Nolan Keene",
-    applicationDate: "2026-08-27T09:05:00",
-    hardCreditDate: "2026-08-20T11:48:00",
-    preReviewAt: "2026-08-28T07:55:00",
-    email: "felix.grant@example.com",
-    state: "FL",
-    hasCosigner: true,
-  }),
-  lightApplication({
-    id: "2087743",
-    name: "Nadia Okoye",
-    recordType: "Tavant",
-    amount: 49800,
-    priority: 2,
-    difficulty: "Medium",
-    referrer: "Splash",
-    underwriter: "Owen Briggs",
-    owner: "Ivy Tran",
-    applicationDate: "2026-08-24T18:30:00",
-    hardCreditDate: "2026-08-19T08:16:00",
-    preReviewAt: "2026-08-28T07:40:00",
-    email: "nadia.okoye@example.com",
-    state: "GA",
-  }),
-  lightApplication({
-    id: "2080199",
-    name: "Mateo Ruiz",
-    recordType: "Tavant",
-    amount: 81200,
-    priority: 4,
-    difficulty: "Hard",
-    referrer: "Paid Search",
-    underwriter: "Sasha Lind",
-    owner: "Bennett Cole",
-    applicationDate: "2026-08-23T12:08:00",
-    hardCreditDate: "2026-08-17T15:41:00",
-    preReviewAt: "2026-08-28T07:22:00",
-    email: "mateo.ruiz@example.com",
-    state: "AZ",
-  }),
-  lightApplication({
-    id: "2073381",
-    name: "Claire Brennan",
-    recordType: "Tavant",
-    amount: 36150,
-    priority: 5,
-    difficulty: "Medium",
-    referrer: "NerdWallet",
-    underwriter: "Dana Whitfield",
-    owner: "Reese Alvarez",
-    applicationDate: "2026-08-22T10:17:00",
-    hardCreditDate: "2026-08-14T09:55:00",
-    preReviewAt: "2026-08-27T16:05:00",
-    email: "claire.brennan@example.com",
-    state: "CO",
-  }),
-];
+function buildSeedApplications(): Application[] {
+  const rand = mulberry32(0x51ed56);
+  const usedIds = new Set<string>(["2000001", "2199999", "2080008", "2075208", "1994400", "2108080"]);
+  const forcedIds = [...usedIds];
+
+  function nextId() {
+    let id = "";
+    do {
+      id = String(1_900_000 + Math.floor(rand() * 300_000));
+    } while (usedIds.has(id));
+    usedIds.add(id);
+    return id;
+  }
+
+  const usedNames = new Set(EDGE_BORROWERS);
+  const names = [...EDGE_BORROWERS];
+  while (names.length < 56) {
+    const name = `${pick(rand, FIRST_NAMES)} ${pick(rand, LAST_NAMES)}`;
+    if (usedNames.has(name)) continue;
+    usedNames.add(name);
+    names.push(name);
+  }
+  for (let i = names.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rand() * (i + 1));
+    [names[i], names[j]] = [names[j]!, names[i]!];
+  }
+
+  const cosignerPool = [
+    ...EDGE_COSIGNERS,
+    ...COSIGNER_FIRST.flatMap((first) => COSIGNER_LAST.map((last) => `${first} ${last}`)),
+  ];
+
+  return names.map((name, index) => {
+    const id = index < forcedIds.length ? forcedIds[index]! : nextId();
+    const status = statusFor(index);
+    const [state, city, zip] = pick(rand, STATES);
+    const hasCosigner = index % 5 !== 0;
+    const cosignerName = hasCosigner
+      ? index === 7 || index === 14
+        ? "Morgan Phelps"
+        : pick(rand, cosignerPool)
+      : undefined;
+    const month = 6 + (index % 4);
+    const day = index % 11 === 0 ? 15 : 1 + (index % 28);
+    const applicationDate = padDate(2026, month, Math.min(day, 28), 8 + (index % 10), (index * 7) % 60);
+    const hardCreditDate = padDate(2026, month, Math.max(1, Math.min(day, 28) - 3), 9, 12);
+    const preReviewAt = padDate(2026, month, Math.min(day + 1, 28), 7, 40);
+    return lightApplication({
+      id,
+      name,
+      recordType: index % 2 === 0 ? "Tavant" : "InSchool",
+      amount: index === 3 ? 5200 : index === 5 ? 151200 : 4200 + Math.round(rand() * 176000),
+      priority: 1 + (index % 6),
+      difficulty: index === 5 || index % 5 === 0 ? "Hard" : "Medium",
+      referrer: pick(rand, REFERRERS),
+      underwriter: pick(rand, UNDERWRITERS),
+      owner: pick(rand, OWNERS),
+      applicationDate,
+      hardCreditDate,
+      preReviewAt,
+      status,
+      email: `${slug(name)}.${id}@example.com`,
+      state,
+      city,
+      zip,
+      cosignerName,
+      cosignerStatus: hasCosigner ? pick(rand, COSIGNER_ON_FILE) : pick(rand, COSIGNER_NONE),
+      borrowerStatus: pick(rand, UW_BORROWER_STATUSES),
+    });
+  });
+}
+
+export const seedApplications: Application[] = buildSeedApplications();

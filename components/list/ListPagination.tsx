@@ -1,35 +1,126 @@
-export function ListPagination({ count }: { count: number }) {
+"use client";
+
+import { useState, type ReactNode } from "react";
+
+export const LIST_PAGE_SIZE = 10;
+
+export function usePagedList<T>(items: T[], pageSize = LIST_PAGE_SIZE) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  if (page !== currentPage) setPage(currentPage);
+
+  const start = items.length === 0 ? 0 : (currentPage - 1) * pageSize;
+  return {
+    page: currentPage,
+    setPage,
+    pageSize,
+    pageItems: items.slice(start, start + pageSize),
+    count: items.length,
+  };
+}
+
+export function ListPagination({
+  count,
+  page,
+  pageSize = LIST_PAGE_SIZE,
+  onPageChange,
+}: {
+  count: number;
+  page: number;
+  pageSize?: number;
+  onPageChange: (page: number) => void;
+}) {
   if (count === 0) return null;
+
+  const totalPages = Math.max(1, Math.ceil(count / pageSize));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const start = (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, count);
+  const pages = visiblePages(currentPage, totalPages);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-md px-xl py-lg">
       <p className="text-sm text-gray-dark">
-        1 - {count} of {count} items
+        {start} - {end} of {count} items
       </p>
-      <div className="flex items-center gap-sm">
-        <span className="inline-flex h-[38px] w-14 items-center justify-center rounded-xs border border-gray-light bg-white text-gray-dark">
+      <nav aria-label="Pagination" className="flex items-center gap-sm">
+        <PagerButton
+          label="Previous page"
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange(currentPage - 1)}
+          wide
+        >
           <ChevronsLeft />
-        </span>
-        <span className="inline-flex h-[38px] items-center justify-center rounded-xs bg-primary px-[21px] text-sm font-semibold text-white">
-          1
-        </span>
-        <span className="inline-flex h-[38px] w-[50px] items-center justify-center rounded-xs border border-gray-light bg-white text-sm text-gray-dark">
-          2
-        </span>
-        <span className="inline-flex h-[38px] w-[50px] items-center justify-center rounded-xs border border-gray-light bg-white text-sm text-gray-dark">
-          3
-        </span>
-        <span className="inline-flex h-[38px] w-[50px] items-center justify-center rounded-xs border border-gray-light bg-white text-sm text-gray-dark">
-          4
-        </span>
-        <span className="inline-flex h-[38px] w-[50px] items-center justify-center rounded-xs border border-gray-light bg-white text-sm text-gray-dark">
-          5
-        </span>
-        <span className="inline-flex h-[38px] w-14 items-center justify-center rounded-xs border border-gray-light bg-white text-gray-dark">
+        </PagerButton>
+        {pages.map((pageNumber) => {
+          const active = pageNumber === currentPage;
+          return (
+            <PagerButton
+              key={pageNumber}
+              label={`Page ${pageNumber}`}
+              active={active}
+              onClick={() => onPageChange(pageNumber)}
+            >
+              {pageNumber}
+            </PagerButton>
+          );
+        })}
+        <PagerButton
+          label="Next page"
+          disabled={currentPage >= totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+          wide
+        >
           <ChevronsRight />
-        </span>
-      </div>
+        </PagerButton>
+      </nav>
     </div>
+  );
+}
+
+function visiblePages(current: number, total: number, max = 5) {
+  if (total <= max) return Array.from({ length: total }, (_, index) => index + 1);
+  const half = Math.floor(max / 2);
+  let start = Math.max(1, current - half);
+  const end = Math.min(total, start + max - 1);
+  start = Math.max(1, end - max + 1);
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
+function PagerButton({
+  children,
+  label,
+  onClick,
+  active = false,
+  disabled = false,
+  wide = false,
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  wide?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-current={active ? "page" : undefined}
+      disabled={disabled}
+      onClick={onClick}
+      className={[
+        "inline-flex h-[38px] items-center justify-center rounded-xs text-sm",
+        wide ? "w-14" : "min-w-[50px] px-[21px]",
+        active
+          ? "bg-primary font-semibold text-white"
+          : "border border-gray-light bg-white text-gray-dark",
+        disabled ? "opacity-40" : !active ? "hover:bg-gray-lightest" : "",
+      ].join(" ")}
+    >
+      {children}
+    </button>
   );
 }
 

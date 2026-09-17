@@ -1,28 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { Dropdown, DropdownItem } from "@/components/ui/Dropdown";
 import { useStore } from "@/lib/store";
 
 export function TopNav() {
   const { resetStore } = useStore();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
   const fileOpen = Boolean(pathname.match(/^\/(applications|senior-queue)\/[^/]+/));
-  const workbookOpen = pathname.startsWith("/workbook") || pathname.startsWith("/view");
   const queueActive = !fileOpen && (pathname.startsWith("/queue") || pathname.startsWith("/senior-queue"));
   const searchActive = pathname.startsWith("/loan-search");
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointer(event: MouseEvent) {
-      if (!root.current?.contains(event.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointer);
-    return () => document.removeEventListener("mousedown", onPointer);
-  }, [open]);
 
   return (
     <div className="border-b border-gray-lightest bg-white py-sm">
@@ -55,106 +43,36 @@ export function TopNav() {
               Loan Search
             </Link>
           </nav>
-          {fileOpen || workbookOpen ? null : (
-            <Suspense fallback={null}>
-              <HeaderSearch />
-            </Suspense>
-          )}
         </div>
-        <div ref={root} className="relative">
-          <button
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={open}
-            aria-label="Signed in as Casey Morrow"
-            onClick={() => setOpen((next) => !next)}
-            className="inline-flex items-center gap-xs rounded-xs px-[5px] py-[9px] text-sm font-semibold text-gray-dark hover:bg-gray-lightest"
-          >
-            Casey Morrow
-            <img src="/brand/chevron-down.svg" alt="" width={16} height={16} />
-          </button>
-          {open ? (
-            <div
-              role="menu"
-              className="absolute top-[calc(100%+4px)] right-0 z-30 min-w-52 border border-gray-light bg-white py-xs"
+        <Dropdown
+          align="right"
+          trigger={
+            <button
+              type="button"
+              aria-label="Signed in as Casey Morrow"
+              className="inline-flex items-center gap-xs rounded-xs px-[5px] py-[9px] text-sm font-semibold text-gray-dark hover:bg-gray-lightest"
             >
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full items-center gap-sm px-md py-sm text-left text-sm text-charcoal hover:bg-gray-lightest"
-                onClick={() => {
-                  resetStore();
-                  setOpen(false);
-                }}
-              >
+              Casey Morrow
+              <img src="/brand/chevron-down.svg" alt="" width={16} height={16} />
+            </button>
+          }
+        >
+          {({ close }) => (
+            <DropdownItem
+              onClick={() => {
+                resetStore();
+                close();
+              }}
+            >
+              <span className="flex items-center gap-sm">
                 <ResetIcon />
                 Reset demo data
-              </button>
-            </div>
-          ) : null}
-        </div>
+              </span>
+            </DropdownItem>
+          )}
+        </Dropdown>
       </div>
     </div>
-  );
-}
-
-function HeaderSearch() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const urlQuery = pathname.startsWith("/loan-search") ? (searchParams.get("q") ?? "") : "";
-  const [query, setQuery] = useState(urlQuery);
-
-  useEffect(() => {
-    setQuery(urlQuery);
-  }, [urlQuery]);
-
-  function clear() {
-    setQuery("");
-    if (pathname.startsWith("/loan-search")) router.push("/loan-search");
-  }
-
-  return (
-    <form
-      className="hidden md:block"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const next = query.trim();
-        router.push(next ? `/loan-search?q=${encodeURIComponent(next)}` : "/loan-search");
-      }}
-    >
-      <label className="flex h-[34px] w-[422px] max-w-[40vw] items-center gap-sm rounded-xs border border-gray-light bg-white px-md">
-        <HeaderSearchIcon />
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search"
-          className="h-4 min-w-0 flex-1 bg-transparent text-xs text-gray-dark outline-none placeholder:text-gray-dark"
-        />
-        {query ? (
-          <button type="button" aria-label="Clear search" onClick={clear} className="text-gray-medium">
-            <HeaderCloseIcon />
-          </button>
-        ) : null}
-      </label>
-    </form>
-  );
-}
-
-function HeaderCloseIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function HeaderSearchIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden className="shrink-0 text-gray-dark">
-      <circle cx="8" cy="8" r="5.25" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M12 12l3.5 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
   );
 }
 

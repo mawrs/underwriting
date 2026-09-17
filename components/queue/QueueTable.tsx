@@ -2,10 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ListPagination } from "@/components/list/ListPagination";
+import { FilterBadges, listFilterChips } from "@/components/list/FilterBadges";
+import { ListPagination, usePagedList } from "@/components/list/ListPagination";
+import { ComboSearch, Select } from "@/components/ui/Dropdown";
 import {
   BORROWER_STATUS_LABEL,
   fileWorkspaceHref,
+  matchesSearchQuery,
+  searchFieldOptions,
   type CategoryFilter,
   type CosignerFilter,
   type SearchField,
@@ -13,14 +17,8 @@ import {
 import { useStore } from "@/lib/store";
 import type { Application, WorkflowStatus } from "@/lib/types";
 
-const SEARCH_FIELDS: { id: SearchField; label: string }[] = [
-  { id: "loan-number", label: "Loan #" },
-  { id: "borrower", label: "Borrower" },
-  { id: "cosigner", label: "Co-Signer" },
-];
-
 const CATEGORIES: { id: CategoryFilter; label: string }[] = [
-  { id: "all", label: "All" },
+  { id: "all", label: "Loan Type" },
   { id: "Tavant", label: "Student Loan Refi" },
   { id: "InSchool", label: "In-School" },
 ];
@@ -47,7 +45,7 @@ function queueLoanType(app: Application) {
 export function QueueTable() {
   const { applications, ready } = useStore();
   const [query, setQuery] = useState("");
-  const [field, setField] = useState<SearchField>("loan-number");
+  const [field, setField] = useState<SearchField>("borrower");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [borrowerStatus, setBorrowerStatus] = useState<"all" | WorkflowStatus>("all");
   const [cosigner, setCosigner] = useState<CosignerFilter>("all");
@@ -60,13 +58,31 @@ export function QueueTable() {
       if (cosigner === "has" && !app.cosigner) return false;
       if (cosigner === "none" && app.cosigner) return false;
       if (!needle) return true;
-      if (field === "loan-number") return app.id.toLowerCase().includes(needle);
-      if (field === "borrower") {
-        return `${app.borrower.fullName} ${app.opportunityName}`.toLowerCase().includes(needle);
-      }
-      return (app.cosigner?.fullName ?? "").toLowerCase().includes(needle);
+      return matchesSearchQuery(app, needle, field);
     });
   }, [applications, borrowerStatus, category, cosigner, field, query]);
+  const { page, setPage, pageSize, pageItems, count } = usePagedList(rows);
+  const suggestions = useMemo(() => searchFieldOptions(applications, field), [applications, field]);
+  const chips = listFilterChips(
+    { query, category, borrowerStatus, cosigner },
+    {
+      query: () => {
+        setQuery("");
+        setPage(1);
+      },
+      category: () => setCategory("all"),
+      borrowerStatus: () => setBorrowerStatus("all"),
+      cosigner: () => setCosigner("all"),
+    },
+  );
+
+  function clearAllFilters() {
+    setQuery("");
+    setCategory("all");
+    setBorrowerStatus("all");
+    setCosigner("all");
+    setPage(1);
+  }
 
   if (!ready) {
     return <p className="text-sm text-gray-medium">Loading queue…</p>;
@@ -76,23 +92,20 @@ export function QueueTable() {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-col gap-sm px-xl py-md">
         <h1 className="text-xl font-semibold text-black">Queue</h1>
-        <p className="text-sm text-black">Loan Type</p>
-        <div className="grid grid-cols-1 gap-sm sm:grid-cols-2 xl:grid-cols-5">
-          <label className="uw-list-field">
-            <SearchIcon />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search"
-              className="h-7 min-w-0 flex-1 bg-transparent text-base text-gray-dark outline-none placeholder:text-gray-dark"
-            />
-            {query ? (
-              <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="text-gray-medium">
-                <CloseIcon />
-              </button>
-            ) : null}
-          </label>
-          <Select value={field} onChange={(value) => setField(value as SearchField)} options={SEARCH_FIELDS} />
+        <div className="grid grid-cols-1 gap-sm sm:grid-cols-2 xl:grid-cols-4">
+          <ComboSearch
+            value={query}
+            field={field}
+            options={suggestions}
+            onChange={(next) => {
+              setQuery(next);
+              setPage(1);
+            }}
+            onFieldChange={(next) => {
+              setField(next);
+              setPage(1);
+            }}
+          />
           <Select value={category} onChange={(value) => setCategory(value as CategoryFilter)} options={CATEGORIES} />
           <Select
             value={borrowerStatus}
@@ -101,6 +114,7 @@ export function QueueTable() {
           />
           <Select value={cosigner} onChange={(value) => setCosigner(value as CosignerFilter)} options={COSIGNER} />
         </div>
+        <FilterBadges chips={chips} onClearAll={clearAllFilters} />
       </div>
 
       {rows.length === 0 ? (
@@ -109,7 +123,7 @@ export function QueueTable() {
         </p>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto border border-gray-light">
-          <table className="w-full text-left">
+          <table className="uw-list-table text-left">
             <thead className="sticky top-0 z-10">
               <tr>
                 <th className="uw-list-th">Loan Type</th>
@@ -121,104 +135,32 @@ export function QueueTable() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((app) => {
+              {pageItems.map((app) => {
                 const href = fileWorkspaceHref(app);
                 return (
-                  <tr key={app.id} className="cursor-pointer hover:bg-gray-lightest">
+                  <tr key={app.id} className="uw-list-row">
                     <td className="uw-list-td">
-                      <Link href={href} className="text-inherit">
-                        {queueLoanType(app)}
-                      </Link>
+                      <Link
+                        href={href}
+                        className="uw-list-row-link"
+                        aria-label={`Open ${app.borrower.fullName} ${app.id}`}
+                      />
+                      {queueLoanType(app)}
                     </td>
-                    <td className="uw-list-td">
-                      <Link href={href} className="text-primary underline">
-                        {app.id}
-                      </Link>
-                    </td>
-                    <td className="uw-list-td">
-                      <Link href={href} className="text-primary underline">
-                        {app.borrower.fullName}
-                      </Link>
-                    </td>
-                    <td className="uw-list-td">
-                      {app.cosigner ? (
-                        <Link href={href} className="text-primary underline">
-                          {app.cosigner.fullName}
-                        </Link>
-                      ) : null}
-                    </td>
-                    <td className="uw-list-td">
-                      <Link href={href} className="text-inherit">
-                        {BORROWER_STATUS_LABEL[app.status]}
-                      </Link>
-                    </td>
-                    <td className="uw-list-td">
-                      {app.cosigner ? (
-                        <Link href={href} className="text-inherit">
-                          On file
-                        </Link>
-                      ) : null}
-                    </td>
+                    <td className="uw-list-td">{app.id}</td>
+                    <td className="uw-list-td">{app.borrower.fullName}</td>
+                    <td className="uw-list-td">{app.cosigner?.fullName ?? ""}</td>
+                    <td className="uw-list-td">{BORROWER_STATUS_LABEL[app.status]}</td>
+                    <td className="uw-list-td">{app.cosignerStatus}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <ListPagination count={rows.length} />
+          <ListPagination count={count} page={page} pageSize={pageSize} onPageChange={setPage} />
         </div>
       )}
     </div>
   );
 }
 
-function Select({
-  value,
-  onChange,
-  options,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  options: { id: string; label: string }[];
-}) {
-  return (
-    <label className="uw-list-field">
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-7 min-w-0 flex-1 appearance-none bg-transparent text-base text-gray-dark outline-none"
-      >
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDownIcon />
-    </label>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0 text-gray-dark">
-      <circle cx="11" cy="11" r="6.25" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M16 16l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden className="shrink-0 text-gray-dark">
-      <path d="M9 12l5 5 5-5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
